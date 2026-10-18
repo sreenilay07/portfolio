@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import LoadingScreen from "./components/LoadingScreen";
 import ParticlesBg from "./components/ParticlesBg";
 import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
+import HeroStage from "./components/HeroStage";
 import About from "./components/About";
 import Skills from "./components/Skills";
 import Projects from "./components/Projects";
@@ -26,8 +26,10 @@ function App() {
         {isLoading ? (
           <LoadingScreen key="loader" onComplete={() => setIsLoading(false)} />
         ) : (
-          <div key="content" className="relative min-h-screen bg-[#09090b] text-zinc-100 overflow-x-hidden selection:bg-violet-600/30 selection:text-white">
-            
+          <div
+            key="content"
+            className="relative min-h-screen bg-[#09090b] text-zinc-100 overflow-x-clip selection:bg-violet-600/30 selection:text-white"
+          >
             {/* Ambient Background Mesh */}
             <div className="fixed inset-0 grid-bg-lines pointer-events-none z-0 opacity-80" />
             <ParticlesBg />
@@ -37,9 +39,11 @@ function App() {
 
             {/* Main Content Sections */}
             <main className="relative z-20">
-              <Hero onOpenResume={() => setIsResumeOpen(true)} />
+              {/* 3D Virtual Character Stage (replaces standalone Hero on desktop; fallback included) */}
+              <HeroStage onOpenResume={() => setIsResumeOpen(true)} />
               <About />
               <Skills />
+              {/* Projects: Standalone fallback on mobile, sr-only on desktop */}
               <Projects />
               <Education />
               <Certifications />
@@ -55,7 +59,10 @@ function App() {
             <AiAssistant />
 
             {/* Global Modal triggers */}
-            <Resume isOpen={isResumeOpen} onClose={() => setIsResumeOpen(false)} />
+            <Resume
+              isOpen={isResumeOpen}
+              onClose={() => setIsResumeOpen(false)}
+            />
           </div>
         )}
       </AnimatePresence>

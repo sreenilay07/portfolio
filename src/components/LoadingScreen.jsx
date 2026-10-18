@@ -1,43 +1,80 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useProgress, useFBX } from "@react-three/drei";
+import { AVATAR_CONFIG } from "../three/avatarConfig";
 
+// Preload 3D avatar FBX assets immediately on module evaluation
+try {
+  useFBX.preload(AVATAR_CONFIG.models.skin);
+  useFBX.preload(AVATAR_CONFIG.models.sitIdle);
+  useFBX.preload(AVATAR_CONFIG.models.sitToStand);
+  useFBX.preload(AVATAR_CONFIG.models.walk);
+} catch (err) {
+  console.warn("Preloading avatar models:", err);
+}
+
+/**
+ * LoadingScreen
+ * Drives loading progress with both Drei's useProgress and terminal boot logs.
+ * Guarantees a minimum aesthetic presentation time before calling onComplete.
+ */
 export default function LoadingScreen({ onComplete }) {
+  const { progress: dreiProgress } = useProgress();
   const [percent, setPercent] = useState(0);
   const [logIndex, setLogIndex] = useState(0);
+
   const logs = [
     "Initializing neural connections...",
-    "Connecting to LLM APIs...",
+    "Preloading 3D avatar kinematics & Mixamo rigs...",
     "Querying portfolio JSON matrices...",
+    "Compiling WebGL shaders & Lightformers...",
     "Rendering proctoring systems...",
     "Syncing stock market analyzers...",
-    "Decrypting credentials...",
     "Establishing safe TCP handshakes...",
-    "System status: READY."
+    "System status: READY.",
   ];
 
   useEffect(() => {
+    let minTimeElapsed = false;
+    const minTimer = setTimeout(() => {
+      minTimeElapsed = true;
+    }, 1400);
+
     const timer = setInterval(() => {
       setPercent((prev) => {
         if (prev >= 100) {
           clearInterval(timer);
           setTimeout(() => {
             onComplete();
-          }, 600);
+          }, 450);
           return 100;
         }
-        return prev + Math.floor(Math.random() * 8) + 4;
-      });
-    }, 100);
 
-    return () => clearInterval(timer);
-  }, [onComplete]);
+        // Advance smoothly towards 100
+        const step = Math.floor(Math.random() * 8) + 4;
+        const next = prev + step;
+
+        // If models are still loading and we hit 90%, pause until Drei reaches 100%
+        if (next >= 90 && (!minTimeElapsed || dreiProgress < 95)) {
+          return 90;
+        }
+
+        return Math.min(next, 100);
+      });
+    }, 90);
+
+    return () => {
+      clearInterval(timer);
+      clearTimeout(minTimer);
+    };
+  }, [onComplete, dreiProgress]);
 
   useEffect(() => {
     const logTimer = setInterval(() => {
       setLogIndex((prev) => (prev < logs.length - 1 ? prev + 1 : prev));
-    }, 450);
+    }, 320);
     return () => clearInterval(logTimer);
-  }, []);
+  }, [logs.length]);
 
   return (
     <motion.div
@@ -48,8 +85,8 @@ export default function LoadingScreen({ onComplete }) {
     >
       {/* Decorative background grid */}
       <div className="absolute inset-0 grid-bg-lines opacity-10 pointer-events-none" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-30 animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl opacity-30 animate-pulse-glow" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl opacity-30 animate-pulse-glow" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl opacity-30 animate-pulse-glow" />
 
       <div className="w-full max-w-md glass-panel p-6 rounded-2xl relative overflow-hidden shadow-2xl border border-white/5">
         {/* Terminal Header */}
@@ -57,7 +94,9 @@ export default function LoadingScreen({ onComplete }) {
           <div className="w-3.5 h-3.5 rounded-full bg-rose-500/80" />
           <div className="w-3.5 h-3.5 rounded-full bg-amber-500/80" />
           <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/80" />
-          <span className="text-xs font-mono text-zinc-500 ml-2">sreenilay_boot_env.sh</span>
+          <span className="text-xs font-mono text-zinc-500 ml-2">
+            sreenilay_boot_env.sh
+          </span>
         </div>
 
         {/* Terminal Logs */}
@@ -71,7 +110,11 @@ export default function LoadingScreen({ onComplete }) {
               className="flex items-center gap-2"
             >
               <span className="text-violet-500 font-bold">&gt;&gt;</span>
-              <span className={idx === logs.length - 1 ? "text-cyan-400 font-bold" : ""}>
+              <span
+                className={
+                  idx === logs.length - 1 ? "text-cyan-400 font-bold" : ""
+                }
+              >
                 {log}
               </span>
             </motion.div>
@@ -81,8 +124,10 @@ export default function LoadingScreen({ onComplete }) {
         {/* Progress bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-mono text-zinc-400">
-            <span>COMPILING PORTFOLIO</span>
-            <span className="text-cyan-400 font-bold">{Math.min(percent, 100)}%</span>
+            <span>PREPARING 3D VIRTUAL AVATAR</span>
+            <span className="text-cyan-400 font-bold">
+              {Math.min(percent, 100)}%
+            </span>
           </div>
           <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden p-[1px]">
             <motion.div

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Terminal, Cpu } from "lucide-react";
+import { Menu, X, Terminal } from "lucide-react";
 import { personalInfo } from "../data/personalInfo";
 
 export default function Navbar() {
@@ -9,16 +9,19 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  const navItems = [
-    { label: "Home", id: "home" },
-    { label: "About", id: "about" },
-    { label: "Skills", id: "skills" },
-    { label: "Projects", id: "projects" },
-    { label: "Timeline", id: "education" },
-    { label: "Certifications", id: "certifications" },
-    { label: "Achievements", id: "achievements" },
-    { label: "Contact", id: "contact" }
-  ];
+  const navItems = useMemo(
+    () => [
+      { label: "Home", id: "home" },
+      { label: "About", id: "about" },
+      { label: "Skills", id: "skills" },
+      { label: "Projects", id: "projects" },
+      { label: "Timeline", id: "education" },
+      { label: "Certifications", id: "certifications" },
+      { label: "Achievements", id: "achievements" },
+      { label: "Contact", id: "contact" },
+    ],
+    []
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,12 +51,28 @@ export default function Navbar() {
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [navItems]);
 
   const scrollTo = (id) => {
     setIsOpen(false);
+
+    // If target is "projects" and 3D HeroStage is active on desktop, scroll to ~0.62 progress
+    if (id === "projects") {
+      const homeEl = document.getElementById("home");
+      if (homeEl && homeEl.offsetHeight > window.innerHeight * 2) {
+        const stageTop = homeEl.getBoundingClientRect().top + window.scrollY;
+        const totalTrack = homeEl.offsetHeight - window.innerHeight;
+        const targetY = stageTop + 0.62 * totalTrack;
+        window.scrollTo({
+          top: targetY,
+          behavior: "smooth",
+        });
+        return;
+      }
+    }
+
     const element = document.getElementById(id);
     if (element) {
       const offset = 80; // height of navbar
@@ -61,7 +80,7 @@ export default function Navbar() {
 
       window.scrollTo({
         top: elementPosition - offset,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
   };
@@ -73,7 +92,10 @@ export default function Navbar() {
       }`}
     >
       {/* Scroll Progress Bar */}
-      <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-violet-600 via-cyan-500 to-emerald-400" style={{ width: `${scrollProgress}%` }} />
+      <div
+        className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-violet-600 via-cyan-500 to-emerald-400"
+        style={{ width: `${scrollProgress}%` }}
+      />
 
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
