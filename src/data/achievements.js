@@ -1,7 +1,7 @@
 export const achievementsData = [
   {
     title: "AI & ML Innovations",
-    metric: "3+ Deployments",
+    metric: "5+ Deployments",
     description: "Developed and deployed functional AI models using TensorFlow.js, Groq API, and Google Gemini. Integrated real-time proctoring and computer vision on client browsers.",
     category: "AI Projects"
   },

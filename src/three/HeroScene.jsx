@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, memo } from "react";
 import StageLighting from "./StageLighting";
 import StageFurniture from "./StageFurniture";
 import AvatarModel from "./AvatarModel";
@@ -10,7 +10,7 @@ import CameraController from "./CameraController";
  * Composes the 3D scene elements: lights, furniture, avatar,
  * hand-anchored project holograms, and camera controller.
  */
-export default function HeroScene({ onSelectProject }) {
+function HeroScene({ onSelectProject }) {
   const rightHandBoneRef = useRef(null);
   const leftHandBoneRef = useRef(null);
 
@@ -31,3 +31,5 @@ export default function HeroScene({ onSelectProject }) {
     </>
   );
 }
+
+export default memo(HeroScene);

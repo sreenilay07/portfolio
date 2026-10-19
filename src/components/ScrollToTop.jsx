@@ -31,8 +31,7 @@ export default function ScrollToTop() {
     });
   };
 
-  // Circular progress calculations
-  const radius = 20;
+  const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
@@ -40,35 +39,36 @@ export default function ScrollToTop() {
     <AnimatePresence>
       {isVisible && (
         <motion.button
-          initial={{ opacity: 0, scale: 0.5, y: 50 }}
+          initial={{ opacity: 0, scale: 0.5, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.5, y: 50 }}
+          exit={{ opacity: 0, scale: 0.5, y: 30 }}
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 p-3 bg-zinc-950/80 border border-white/10 rounded-full flex items-center justify-center cursor-pointer hover:border-violet-500 hover:text-violet-400 text-zinc-400 shadow-xl transition-colors select-none focus:outline-none"
+          aria-label="Scroll to top of page"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 p-2 sm:p-2.5 bg-[#080d12]/90 border border-white/10 rounded-full flex items-center justify-center cursor-pointer hover:border-[#c59b7b] hover:text-[#c59b7b] text-[#94a3b8] shadow-2xl transition-colors select-none focus:outline-none min-w-[44px] min-h-[44px]"
         >
           {/* Circular progress SVG */}
-          <svg className="absolute w-[52px] h-[52px] -rotate-90 pointer-events-none">
+          <svg className="absolute w-[46px] h-[46px] -rotate-90 pointer-events-none">
             <circle
-              cx="26"
-              cy="26"
+              cx="23"
+              cy="23"
               r={radius}
-              className="stroke-zinc-800"
+              className="stroke-white/10"
               strokeWidth="2"
               fill="transparent"
             />
             <circle
-              cx="26"
-              cy="26"
+              cx="23"
+              cy="23"
               r={radius}
-              className="stroke-violet-500 transition-all duration-75"
-              strokeWidth="2.5"
+              className="stroke-[#c59b7b] transition-all duration-75"
+              strokeWidth="2"
               fill="transparent"
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
             />
           </svg>
-          <ArrowUp className="w-5 h-5 relative z-10" />
+          <ArrowUp className="w-4 h-4 relative z-10" />
         </motion.button>
       )}
     </AnimatePresence>

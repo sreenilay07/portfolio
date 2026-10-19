@@ -1,44 +1,59 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useProgress, useFBX } from "@react-three/drei";
-import { AVATAR_CONFIG } from "../three/avatarConfig";
-
-// Preload 3D avatar FBX assets immediately on module evaluation
-try {
-  useFBX.preload(AVATAR_CONFIG.models.skin);
-  useFBX.preload(AVATAR_CONFIG.models.sitIdle);
-  useFBX.preload(AVATAR_CONFIG.models.sitToStand);
-  useFBX.preload(AVATAR_CONFIG.models.walk);
-} catch (err) {
-  console.warn("Preloading avatar models:", err);
+// Preload enhanced video asset immediately on module evaluation
+if (typeof window !== "undefined") {
+  try {
+    const v = document.createElement("video");
+    v.preload = "auto";
+    v.muted = true;
+    v.playsInline = true;
+    v.src = "/portfolio-enhanced.mp4";
+    v.onerror = () => {
+      v.src = "/portfolio.mp4";
+      v.load();
+    };
+    v.load();
+  } catch (err) {
+    console.warn("Preloading video:", err);
+  }
 }
 
 /**
  * LoadingScreen
- * Drives loading progress with both Drei's useProgress and terminal boot logs.
- * Guarantees a minimum aesthetic presentation time before calling onComplete.
+ * Drives loading progress with Drei's useProgress and architectural terminal logs.
+ * Styled in the video-derived quiet luxury palette.
  */
 export default function LoadingScreen({ onComplete }) {
-  const { progress: dreiProgress } = useProgress();
   const [percent, setPercent] = useState(0);
   const [logIndex, setLogIndex] = useState(0);
 
   const logs = [
-    "Initializing neural connections...",
-    "Preloading 3D avatar kinematics & Mixamo rigs...",
-    "Querying portfolio JSON matrices...",
-    "Compiling WebGL shaders & Lightformers...",
-    "Rendering proctoring systems...",
-    "Syncing stock market analyzers...",
-    "Establishing safe TCP handshakes...",
-    "System status: READY.",
+    "Initializing studio environment...",
+    "Buffering cinematic video stream...",
+    "Querying portfolio dataset...",
+    "Configuring scroll-scrubbed controller...",
+    "Preparing case study architectures...",
+    "Syncing product repositories...",
+    "Establishing system protocol...",
+    "Status: READY.",
   ];
 
   useEffect(() => {
+    // If debug parameter is present, fast-track loader for immediate visual inspection
+    const isDebug =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).has("debug");
+    if (isDebug) {
+      const quickTimer = setTimeout(() => {
+        onComplete();
+      }, 300);
+      return () => clearTimeout(quickTimer);
+    }
+
     let minTimeElapsed = false;
     const minTimer = setTimeout(() => {
       minTimeElapsed = true;
-    }, 1400);
+    }, 1100);
 
     const timer = setInterval(() => {
       setPercent((prev) => {
@@ -46,56 +61,49 @@ export default function LoadingScreen({ onComplete }) {
           clearInterval(timer);
           setTimeout(() => {
             onComplete();
-          }, 450);
+          }, 350);
           return 100;
         }
 
-        // Advance smoothly towards 100
-        const step = Math.floor(Math.random() * 8) + 4;
+        const step = Math.floor(Math.random() * 8) + 6;
         const next = prev + step;
 
-        // If models are still loading and we hit 90%, pause until Drei reaches 100%
-        if (next >= 90 && (!minTimeElapsed || dreiProgress < 95)) {
-          return 90;
+        if (next >= 92 && !minTimeElapsed) {
+          return 92;
         }
 
         return Math.min(next, 100);
       });
-    }, 90);
+    }, 70);
 
     return () => {
       clearInterval(timer);
       clearTimeout(minTimer);
     };
-  }, [onComplete, dreiProgress]);
+  }, [onComplete]);
 
   useEffect(() => {
     const logTimer = setInterval(() => {
       setLogIndex((prev) => (prev < logs.length - 1 ? prev + 1 : prev));
-    }, 320);
+    }, 280);
     return () => clearInterval(logTimer);
   }, [logs.length]);
 
   return (
     <motion.div
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0, y: -100 }}
-      transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-      className="fixed inset-0 bg-[#09090b] z-[9999] flex flex-col items-center justify-center p-6 select-none"
+      exit={{ opacity: 0, y: -40 }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed inset-0 bg-[#030508] z-[9999] flex flex-col items-center justify-center p-6 select-none"
     >
-      {/* Decorative background grid */}
-      <div className="absolute inset-0 grid-bg-lines opacity-10 pointer-events-none" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl opacity-30 animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl opacity-30 animate-pulse-glow" />
-
-      <div className="w-full max-w-md glass-panel p-6 rounded-2xl relative overflow-hidden shadow-2xl border border-white/5">
+      <div className="w-full max-w-md arch-card p-6 rounded-2xl relative overflow-hidden shadow-2xl border border-white/[0.08]">
         {/* Terminal Header */}
-        <div className="flex items-center gap-2 pb-4 mb-4 border-b border-white/10">
-          <div className="w-3.5 h-3.5 rounded-full bg-rose-500/80" />
-          <div className="w-3.5 h-3.5 rounded-full bg-amber-500/80" />
-          <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/80" />
-          <span className="text-xs font-mono text-zinc-500 ml-2">
-            sreenilay_boot_env.sh
+        <div className="flex items-center gap-2 pb-4 mb-4 border-b border-white/[0.06]">
+          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+          <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+          <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+          <span className="text-[11px] font-mono text-zinc-500 ml-2 tracking-wider">
+            environment_boot.sh
           </span>
         </div>
 
@@ -104,15 +112,15 @@ export default function LoadingScreen({ onComplete }) {
           {logs.slice(0, logIndex + 1).map((log, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -6 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
               className="flex items-center gap-2"
             >
-              <span className="text-violet-500 font-bold">&gt;&gt;</span>
+              <span className="text-[#c59b7b] font-bold">&gt;&gt;</span>
               <span
                 className={
-                  idx === logs.length - 1 ? "text-cyan-400 font-bold" : ""
+                  idx === logs.length - 1 ? "text-[#eaeef1] font-medium" : "text-zinc-400"
                 }
               >
                 {log}
@@ -124,14 +132,14 @@ export default function LoadingScreen({ onComplete }) {
         {/* Progress bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs font-mono text-zinc-400">
-            <span>PREPARING 3D VIRTUAL AVATAR</span>
-            <span className="text-cyan-400 font-bold">
+            <span className="tracking-wider">SYSTEM INITIALIZATION</span>
+            <span className="text-[#eaeef1] font-semibold">
               {Math.min(percent, 100)}%
             </span>
           </div>
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden p-[1px]">
+          <div className="h-1 bg-[#121a22] rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-violet-600 via-cyan-500 to-emerald-400 rounded-full"
+              className="h-full bg-gradient-to-r from-[#94a3b8] to-[#eaeef1] rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(percent, 100)}%` }}
               transition={{ ease: "easeOut" }}
@@ -142,11 +150,11 @@ export default function LoadingScreen({ onComplete }) {
 
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ delay: 0.5 }}
-        className="mt-8 text-xs font-mono text-zinc-500 tracking-wider text-center"
+        animate={{ opacity: 0.5 }}
+        transition={{ delay: 0.3 }}
+        className="mt-8 text-[11px] font-mono text-zinc-500 tracking-widest text-center"
       >
-        MINUMULA SREE NILAY REDDY // PORTFOLIO v2.0
+        MINUMULA SREE NILAY REDDY // PORTFOLIO
       </motion.div>
     </motion.div>
   );

@@ -2,89 +2,92 @@ import { Environment, Lightformer } from "@react-three/drei";
 
 /**
  * StageLighting
- * High-end studio lighting setup with soft key light, cyan rim light, violet fill,
- * and internal Lightformers without external CDN/HDR preset fetches.
+ * Architectural studio lighting setup derived from portfolio.mp4:
+ * - Horizon fog blending floor seamlessly into #030508
+ * - Clean neutral daylight key light
+ * - Cool steel-slate rim light
+ * - Subtle warm bronze fill reflection
  */
 export default function StageLighting() {
   return (
     <>
-      {/* Soft Ambient base illumination */}
-      <ambientLight color="#0c0d18" intensity={0.8} />
+      {/* Horizon Fog blending floor into page background (#030508) */}
+      <fog attach="fog" args={["#030508", 7, 22]} />
 
-      {/* Main Soft Key Light with contact shadows */}
+      {/* Ambient base illumination */}
+      <ambientLight color="#05080c" intensity={0.7} />
+
+      {/* Main Soft Key Light */}
       <directionalLight
-        position={[3.5, 6.0, 4.5]}
+        position={[4.0, 7.0, 5.0]}
         intensity={2.2}
-        color="#f4f4fa"
+        color="#eaeef1"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-near={0.5}
-        shadow-camera-far={18}
-        shadow-camera-left={-4}
-        shadow-camera-right={4}
-        shadow-camera-top={4}
-        shadow-camera-bottom={-4}
-        shadow-bias={-0.0002}
+        shadow-camera-near={0.1}
+        shadow-camera-far={28}
+        shadow-camera-left={-14}
+        shadow-camera-right={14}
+        shadow-camera-top={14}
+        shadow-camera-bottom={-14}
+        shadow-bias={-0.0001}
+        shadow-radius={2}
       />
 
-      {/* Cyan Rim Light highlighting the avatar contours from behind */}
+      {/* Steel Slate Rim Light outlining avatar silhouette */}
       <directionalLight
-        position={[-3.8, 2.8, -2.5]}
-        intensity={3.2}
-        color="#06b6d4"
-      />
-
-      {/* Violet Fill Light providing atmospheric contrast */}
-      <directionalLight
-        position={[3.2, 2.0, -2.0]}
+        position={[-4.5, 3.2, -3.0]}
         intensity={1.8}
-        color="#8b5cf6"
+        color="#8da0af"
       />
 
-      {/* Subtle Front Chest Fill */}
-      <pointLight position={[0, 1.4, 2.5]} intensity={0.6} color="#38bdf8" />
+      {/* Subtle Warm Bronze Atmospheric Fill */}
+      <directionalLight
+        position={[3.8, 2.5, -2.5]}
+        intensity={0.8}
+        color="#c59b7b"
+      />
 
-      {/* Internal Environment Reflections via Lightformers */}
+      {/* Front Fill */}
+      <pointLight position={[0, 1.4, 2.8]} intensity={0.3} color="#eaeef1" />
+
+      {/* Reflections via Lightformers (Quiet Architectural Environment) */}
       <Environment resolution={256}>
         <group rotation={[-Math.PI / 3, 0, 1]}>
-          {/* Top Soft Violet Overhead Light */}
           <Lightformer
             form="rect"
-            intensity={1.5}
-            color="#8b5cf6"
-            position={[0, 6, 0]}
+            intensity={1.0}
+            color="#eaeef1"
+            position={[0, 7, 0]}
             scale={[12, 12, 1]}
             target={[0, 0, 0]}
           />
 
-          {/* Left Cyan Edge Strip */}
           <Lightformer
             form="rect"
-            intensity={2.5}
-            color="#06b6d4"
+            intensity={1.2}
+            color="#8da0af"
             position={[-6, 2, 2]}
-            scale={[4, 10, 1]}
+            scale={[3, 10, 1]}
             target={[0, 1, 0]}
           />
 
-          {/* Right Fuchsia / Violet Accent */}
-          <Lightformer
-            form="rect"
-            intensity={2.0}
-            color="#d946ef"
-            position={[6, 2, -2]}
-            scale={[4, 10, 1]}
-            target={[0, 1, 0]}
-          />
-
-          {/* Floor Reflection Fill */}
           <Lightformer
             form="rect"
             intensity={0.6}
-            color="#18182b"
+            color="#c59b7b"
+            position={[6, 2, -2]}
+            scale={[3, 10, 1]}
+            target={[0, 1, 0]}
+          />
+
+          <Lightformer
+            form="rect"
+            intensity={0.3}
+            color="#05080c"
             position={[0, -2, 0]}
-            scale={[15, 15, 1]}
+            scale={[16, 16, 1]}
             target={[0, 0, 0]}
           />
         </group>

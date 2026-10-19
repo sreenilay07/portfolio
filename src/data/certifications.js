@@ -1,10 +1,21 @@
 export const certificationsData = [
   {
-    title: "C Programming Fundamentals",
-    issuer: "MindLuster",
-    date: "2024",
-    credentialId: "ML-C-7389",
-    skillsLearned: ["C Language", "Algorithms", "Memory Management", "Pointers"]
+    title: "Introduction to Deep Learning",
+    issuer: "Infosys Springboard",
+    date: "Oct 2026",
+    credentialId: "INF-DL-101",
+    fileUrl: "/dl-1.pdf",
+    verifyUrl: "https://verify.onwingspan.com",
+    skillsLearned: ["Deep Learning Fundamentals", "Neural Network Architecture", "Backpropagation", "Model Optimization"]
+  },
+  {
+    title: "Deep Learning With Python",
+    issuer: "Infosys Springboard",
+    date: "Oct 2026",
+    credentialId: "INF-DLP-102",
+    fileUrl: "/dl-2.pdf",
+    verifyUrl: "https://verify.onwingspan.com",
+    skillsLearned: ["Python AI Workflows", "PyTorch & TensorFlow", "Convolutional Neural Networks", "Computer Vision"]
   },
   {
     title: "Generative AI Fundamentals",
@@ -21,3 +32,4 @@ export const certificationsData = [
     skillsLearned: ["NoSQL Database", "Aggregation Pipelines", "Atlas Search", "Indexing"]
   }
 ];
+

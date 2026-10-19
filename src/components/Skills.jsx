@@ -15,7 +15,6 @@ export default function Skills() {
     { id: "tools", label: "Tools & APIs", icon: <Settings className="w-4 h-4" /> }
   ];
 
-  // Helper to check what to display in each category
   const getSkillsByTab = () => {
     switch (activeTab) {
       case "programming":
@@ -34,7 +33,6 @@ export default function Skills() {
         const toolsCat = skillsData.categories.find(c => c.title.includes("Tools"));
         return { type: "tags", data: toolsCat ? toolsCat.skills : [] };
       default:
-        // "all" returns a mixed view of both bars and category tags
         return { type: "all", data: skillsData };
     }
   };
@@ -42,10 +40,7 @@ export default function Skills() {
   const currentDisplay = getSkillsByTab();
 
   return (
-    <section id="skills" className="py-20 relative bg-zinc-950/40">
-      <div className="absolute top-1/4 right-0 sm:right-10 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-violet-600/5 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-0 sm:left-10 w-64 sm:w-96 h-64 sm:h-96 rounded-full bg-cyan-500/5 blur-3xl pointer-events-none" />
-
+    <section id="skills" className="py-24 relative bg-[#030508]">
       <div className="max-w-7xl mx-auto px-6 relative z-20">
         
         {/* Section Header */}
@@ -55,7 +50,7 @@ export default function Skills() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-3xl sm:text-4xl font-bold font-display text-white"
+            className="text-3xl sm:text-4xl font-bold font-display text-[#eaeef1] tracking-tight"
           >
             Technical Arsenal
           </motion.h2>
@@ -64,20 +59,20 @@ export default function Skills() {
             whileInView={{ scaleX: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="h-[3px] w-20 bg-gradient-to-r from-violet-600 to-cyan-500 mx-auto mt-4 rounded-full"
+            className="h-[1.5px] w-12 bg-[#c59b7b] mx-auto mt-4 rounded-full"
           />
         </div>
 
         {/* Tab Filters */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-12 max-w-4xl mx-auto">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mb-10 sm:mb-12 max-w-4xl mx-auto">
           {categories.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-2 cursor-pointer focus:outline-none select-none ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs uppercase tracking-wider font-medium transition-all duration-200 flex items-center gap-1.5 sm:gap-2 cursor-pointer focus:outline-none select-none min-h-[38px] ${
                 activeTab === tab.id
-                  ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
-                  : "bg-white/5 text-zinc-400 hover:text-zinc-200 border border-white/5"
+                  ? "bg-[#eaeef1] text-[#030508] shadow-md font-semibold"
+                  : "bg-[#080d12] text-[#94a3b8] hover:text-[#eaeef1] border border-white/[0.08] hover:border-white/20"
               }`}
             >
               {tab.icon}
@@ -91,27 +86,27 @@ export default function Skills() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
             >
-              {/* If "programming" is active (render animated progress bars) */}
+              {/* Programming Bars */}
               {currentDisplay.type === "bars" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 glass-panel p-8 rounded-2xl border border-white/5 shadow-xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 arch-card p-4 sm:p-8 rounded-2xl border border-white/[0.08]">
                   {currentDisplay.data.map((lang, index) => (
                     <div key={index} className="space-y-2">
                       <div className="flex justify-between items-center text-sm">
-                        <span className="font-semibold text-zinc-200">{lang.name}</span>
-                        <span className="font-mono text-cyan-400">{lang.level}%</span>
+                        <span className="font-semibold text-[#eaeef1]">{lang.name}</span>
+                        <span className="font-mono text-xs text-[#94a3b8]">{lang.level}%</span>
                       </div>
-                      <div className="h-2 bg-zinc-800 rounded-full overflow-hidden p-[1px]">
+                      <div className="h-1.5 bg-[#121a22] rounded-full overflow-hidden">
                         <motion.div
-                          className="h-full bg-gradient-to-r from-violet-600 to-cyan-500 rounded-full"
+                          className="h-full bg-[#eaeef1] rounded-full"
                           initial={{ width: 0 }}
                           whileInView={{ width: `${lang.level}%` }}
                           viewport={{ once: true }}
-                          transition={{ duration: 1, ease: "easeOut" }}
+                          transition={{ duration: 0.8, ease: "easeOut" }}
                         />
                       </div>
                     </div>
@@ -119,48 +114,48 @@ export default function Skills() {
                 </div>
               )}
 
-              {/* If categorized tags are active */}
+              {/* Categorized Tags */}
               {currentDisplay.type === "tags" && (
-                <div className="flex flex-wrap gap-4 justify-center items-center py-6">
+                <div className="flex flex-wrap gap-3 justify-center items-center py-6">
                   {currentDisplay.data.map((skill, index) => (
                     <motion.div
                       key={index}
-                      initial={{ scale: 0.8, opacity: 0 }}
+                      initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="px-6 py-3.5 rounded-2xl glass-panel text-white font-medium hover:border-violet-500/40 hover:shadow-md hover:shadow-violet-600/5 hover:-translate-y-1 transition-all duration-300 flex items-center gap-2 cursor-default select-none border border-white/5"
+                      transition={{ duration: 0.25, delay: index * 0.03 }}
+                      className="px-5 py-3 rounded-xl arch-card text-[#eaeef1] text-sm font-medium border border-white/[0.08] hover:border-white/20 flex items-center gap-2.5 cursor-default select-none"
                     >
-                      <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#c59b7b]" />
                       <span>{skill}</span>
                     </motion.div>
                   ))}
                 </div>
               )}
 
-              {/* Default "all" view - Display both side-by-side */}
+              {/* Default "all" view */}
               {currentDisplay.type === "all" && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   
                   {/* Left Column: Progress Bars */}
-                  <div className="lg:col-span-5 space-y-6 glass-panel p-6 rounded-2xl border border-white/5 shadow-md">
-                    <h3 className="text-lg font-bold text-white font-display border-b border-white/5 pb-3 flex items-center gap-2">
-                      <Code2 className="w-5 h-5 text-violet-400" />
+                  <div className="lg:col-span-5 space-y-6 arch-card p-4 sm:p-6 rounded-2xl border border-white/[0.08]">
+                    <h3 className="text-base font-bold text-[#eaeef1] font-display border-b border-white/[0.06] pb-3 flex items-center gap-2">
+                      <Code2 className="w-4 h-4 text-[#c59b7b]" />
                       Core Languages
                     </h3>
-                    <div className="space-y-5">
+                    <div className="space-y-4">
                       {skillsData.programming.map((lang, index) => (
                         <div key={index} className="space-y-1.5">
                           <div className="flex justify-between items-center text-xs sm:text-sm">
-                            <span className="font-semibold text-zinc-300">{lang.name}</span>
-                            <span className="font-mono text-cyan-400">{lang.level}%</span>
+                            <span className="font-medium text-[#eaeef1]">{lang.name}</span>
+                            <span className="font-mono text-xs text-[#94a3b8]">{lang.level}%</span>
                           </div>
-                          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-[#121a22] rounded-full overflow-hidden">
                             <motion.div
-                              className="h-full bg-gradient-to-r from-violet-600 to-cyan-500 rounded-full"
+                              className="h-full bg-gradient-to-r from-[#94a3b8] to-[#eaeef1] rounded-full"
                               initial={{ width: 0 }}
                               whileInView={{ width: `${lang.level}%` }}
                               viewport={{ once: true }}
-                              transition={{ duration: 1, ease: "easeOut" }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
                             />
                           </div>
                         </div>
@@ -169,21 +164,21 @@ export default function Skills() {
                   </div>
 
                   {/* Right Column: Other Skill Badges by Category */}
-                  <div className="lg:col-span-7 space-y-6">
+                  <div className="lg:col-span-7 space-y-4 sm:space-y-5">
                     {skillsData.categories.map((cat, catIdx) => (
                       <div
                         key={catIdx}
-                        className="glass-panel p-6 rounded-2xl border border-white/5 shadow-sm space-y-3.5"
+                        className="arch-card p-4 sm:p-5 rounded-2xl border border-white/[0.08] space-y-3"
                       >
-                        <h4 className="text-sm font-bold font-mono text-zinc-400 tracking-wider flex items-center gap-2">
-                          <div className="w-1.5 h-3 bg-cyan-400 rounded-full" />
-                          {cat.title.toUpperCase()}
+                        <h4 className="text-xs font-bold font-mono text-[#94a3b8] tracking-wider uppercase flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-[#c59b7b] rounded-full" />
+                          {cat.title}
                         </h4>
-                        <div className="flex flex-wrap gap-2.5">
+                        <div className="flex flex-wrap gap-2">
                           {cat.skills.map((skill, skillIdx) => (
                             <span
                               key={skillIdx}
-                              className="px-3.5 py-2 rounded-xl bg-zinc-900 border border-white/5 text-zinc-300 hover:text-white hover:border-violet-500/25 hover:bg-zinc-900/50 hover:shadow-inner transition-all duration-300 text-sm cursor-default select-none"
+                              className="px-3 py-1.5 rounded-lg bg-[#121a22] border border-white/[0.06] text-[#94a3b8] hover:text-[#eaeef1] hover:border-white/15 transition-all duration-200 text-xs font-mono cursor-default select-none"
                             >
                               {skill}
                             </span>

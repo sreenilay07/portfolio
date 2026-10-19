@@ -31,27 +31,24 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-white/5 bg-zinc-950 py-12 relative overflow-hidden select-none">
-      {/* Ambient background glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-violet-600/5 rounded-full blur-3xl pointer-events-none" />
-
+    <footer className="border-t border-white/[0.08] bg-[#030508] py-14 relative overflow-hidden select-none">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 items-center relative z-20">
         
         {/* Left Column: Logo & Tagline */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left gap-3">
           <button
             onClick={() => handleScrollTo("home")}
-            className="flex items-center gap-2 cursor-pointer font-display text-lg font-bold tracking-tight text-white focus:outline-none"
+            className="flex items-center gap-2.5 cursor-pointer font-display text-base font-semibold tracking-tight text-[#eaeef1] hover:text-white transition-colors focus:outline-none"
           >
-            <div className="p-1 rounded bg-gradient-to-tr from-violet-600 to-cyan-500 text-white shadow-md">
-              <Terminal className="w-4.5 h-4.5" />
+            <div className="p-1.5 rounded-lg bg-[#080d12] border border-white/10 text-[#eaeef1] shadow-sm">
+              <Terminal className="w-4 h-4 text-[#c59b7b]" />
             </div>
-            <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+            <span>
               {personalInfo.firstName}
-              <span className="text-violet-500 font-extrabold">.</span>
+              <span className="text-[#c59b7b] font-bold ml-1">.</span>
             </span>
           </button>
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-xs italic leading-relaxed">
+          <p className="text-xs text-[#94a3b8] max-w-xs leading-relaxed">
             Building intelligent software that creates real-world impact.
           </p>
         </div>
@@ -62,7 +59,7 @@ export default function Footer() {
             <button
               key={link.id}
               onClick={() => handleScrollTo(link.id)}
-              className="text-xs sm:text-sm text-zinc-400 hover:text-white transition-colors cursor-pointer focus:outline-none"
+              className="text-xs text-[#94a3b8] hover:text-[#eaeef1] transition-colors cursor-pointer focus:outline-none uppercase tracking-wider font-mono"
             >
               {link.label}
             </button>
@@ -70,32 +67,35 @@ export default function Footer() {
         </div>
 
         {/* Right Column: Social / Copyright */}
-        <div className="flex flex-col items-center md:items-end text-center md:text-right gap-4">
+        <div className="flex flex-col items-center md:items-end text-center md:text-right gap-3.5">
           {/* Social icons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <a
               href={personalInfo.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all shadow-md"
+              aria-label="GitHub Profile"
+              className="p-2 rounded-lg bg-[#080d12] hover:bg-[#121a22] border border-white/[0.08] text-[#94a3b8] hover:text-[#eaeef1] transition-all"
             >
-              <Github className="w-4.5 h-4.5" />
+              <Github className="w-4 h-4" />
             </a>
             <a
               href={personalInfo.linkedin}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-sky-400 transition-all shadow-md"
+              aria-label="LinkedIn Profile"
+              className="p-2 rounded-lg bg-[#080d12] hover:bg-[#121a22] border border-white/[0.08] text-[#94a3b8] hover:text-[#eaeef1] transition-all"
             >
-              <Linkedin className="w-4.5 h-4.5" />
+              <Linkedin className="w-4 h-4" />
             </a>
             <a
               href="https://mail.google.com/mail/?view=cm&fs=1&to=sreenilayreddy@gmail.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-emerald-400 transition-all shadow-md"
+              aria-label="Email Minumula Sree Nilay Reddy"
+              className="p-2 rounded-lg bg-[#080d12] hover:bg-[#121a22] border border-white/[0.08] text-[#94a3b8] hover:text-[#eaeef1] transition-all"
             >
-              <Mail className="w-4.5 h-4.5" />
+              <Mail className="w-4 h-4" />
             </a>
           </div>
 

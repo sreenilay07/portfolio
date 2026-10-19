@@ -11,6 +11,8 @@ import { scrollStore } from "./scrollStore";
  * Loads the Mixamo FBX skin and animation clips, cleans hips root motion for walk,
  * blends between sitIdle -> sitToStand -> walk -> armsSpread, and scrubs animations
  * directly with smooth damping.
+ * Uses exact child-direction vectors to roll forearms and hands around their longitudinal axis
+ * so palms face cleanly UP with no wrist twisting.
  */
 export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
   const groupRef = useRef(null);
@@ -28,6 +30,14 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     neck: null,
   });
 
+  // Longitudinal axes vectors along the arm bones
+  const axesRef = useRef({
+    leftForeArmAxis: new THREE.Vector3(1, 0, 0),
+    rightForeArmAxis: new THREE.Vector3(-1, 0, 0),
+    leftHandAxis: new THREE.Vector3(1, 0, 0),
+    rightHandAxis: new THREE.Vector3(-1, 0, 0),
+  });
+
   // 1. Load FBX Assets via drei useFBX
   const skinFbx = useFBX(AVATAR_CONFIG.models.skin);
   const sitFbx = useFBX(AVATAR_CONFIG.models.sitIdle);
@@ -39,7 +49,7 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     return SkeletonUtils.clone(skinFbx);
   }, [skinFbx]);
 
-  // 3. Traverse hierarchy, find bones, and apply digital twin styling inside useEffect
+  // 3. Traverse hierarchy, find bones, calculate longitudinal axes, and style materials
   useEffect(() => {
     if (!avatarScene) return;
 
@@ -52,28 +62,38 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
         const nameLower = child.name.toLowerCase();
 
         if (
-          nameLower.includes("righthand") &&
-          !nameLower.includes("thumb") &&
-          !nameLower.includes("index") &&
-          !nameLower.includes("middle") &&
-          !nameLower.includes("ring") &&
-          !nameLower.includes("pinky")
+          nameLower === "mixamorigrighthand" ||
+          nameLower === "righthand" ||
+          (nameLower.includes("righthand") &&
+            !nameLower.includes("thumb") &&
+            !nameLower.includes("index") &&
+            !nameLower.includes("middle") &&
+            !nameLower.includes("ring") &&
+            !nameLower.includes("pinky"))
         ) {
           bonesRef.current.rightHand = child;
           if (rightHandBoneRef) rightHandBoneRef.current = child;
         } else if (
-          nameLower.includes("lefthand") &&
-          !nameLower.includes("thumb") &&
-          !nameLower.includes("index") &&
-          !nameLower.includes("middle") &&
-          !nameLower.includes("ring") &&
-          !nameLower.includes("pinky")
+          nameLower === "mixamoriglefthand" ||
+          nameLower === "lefthand" ||
+          (nameLower.includes("lefthand") &&
+            !nameLower.includes("thumb") &&
+            !nameLower.includes("index") &&
+            !nameLower.includes("middle") &&
+            !nameLower.includes("ring") &&
+            !nameLower.includes("pinky"))
         ) {
           bonesRef.current.leftHand = child;
           if (leftHandBoneRef) leftHandBoneRef.current = child;
-        } else if (nameLower.includes("rightforearm")) {
+        } else if (
+          nameLower === "mixamorigrightforearm" ||
+          nameLower === "rightforearm"
+        ) {
           bonesRef.current.rightForeArm = child;
-        } else if (nameLower.includes("leftforearm")) {
+        } else if (
+          nameLower === "mixamorigleftforearm" ||
+          nameLower === "leftforearm"
+        ) {
           bonesRef.current.leftForeArm = child;
         } else if (nameLower.includes("spine2") || nameLower.includes("spine")) {
           if (!bonesRef.current.spine) bonesRef.current.spine = child;
@@ -98,8 +118,29 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
       }
     });
 
+    // Derive longitudinal axes directly from bone child positions
+    if (bonesRef.current.leftForeArm && bonesRef.current.leftHand) {
+      axesRef.current.leftForeArmAxis = bonesRef.current.leftHand.position
+        .clone()
+        .normalize();
+      axesRef.current.leftHandAxis = axesRef.current.leftForeArmAxis.clone();
+    }
+    if (bonesRef.current.rightForeArm && bonesRef.current.rightHand) {
+      axesRef.current.rightForeArmAxis = bonesRef.current.rightHand.position
+        .clone()
+        .normalize();
+      axesRef.current.rightHandAxis = axesRef.current.rightForeArmAxis.clone();
+    }
+
     setHasNeck(foundNeck);
     scrollStore.bones = discoveredBones;
+
+    if (typeof window !== "undefined") {
+      window.__avatar = {
+        bones: bonesRef.current,
+        axes: axesRef.current,
+      };
+    }
   }, [avatarScene, rightHandBoneRef, leftHandBoneRef]);
 
   // 4. Extract, Clean, and Retarget Animation Clips
@@ -111,17 +152,23 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
 
     // Sit Idle Clip
     const sitRaw = sitFbx.animations?.[0];
-    const sitIdleClip = sitRaw ? sitRaw.clone() : new THREE.AnimationClip("sitIdle", 0.95, []);
+    const sitIdleClip = sitRaw
+      ? sitRaw.clone()
+      : new THREE.AnimationClip("sitIdle", 0.95, []);
     sitIdleClip.name = "sitIdle";
 
     // Sit To Stand Clip
     const standRaw = standFbx.animations?.[0];
-    const sitToStandClip = standRaw ? standRaw.clone() : new THREE.AnimationClip("sitToStand", 2.25, []);
+    const sitToStandClip = standRaw
+      ? standRaw.clone()
+      : new THREE.AnimationClip("sitToStand", 2.25, []);
     sitToStandClip.name = "sitToStand";
 
     // Walk Clip - Clean Root Motion (strip X and Z translations on Hips, preserve Y bobbing)
     const walkRaw = walkFbx.animations?.[0];
-    const walkClip = walkRaw ? walkRaw.clone() : new THREE.AnimationClip("walk", 1.02, []);
+    const walkClip = walkRaw
+      ? walkRaw.clone()
+      : new THREE.AnimationClip("walk", 1.02, []);
     walkClip.name = "walk";
 
     for (const track of walkClip.tracks) {
@@ -131,17 +178,23 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
         for (let i = 0; i < track.values.length / 3; i++) {
           track.values[i * 3 + 0] = initialX; // Freeze lateral displacement
           track.values[i * 3 + 2] = initialZ; // Freeze forward displacement (driven by code)
-          // track.values[i * 3 + 1] remains intact for natural walking bounce
         }
       }
     }
 
     // T-Pose Clip (static rest pose for arms spread)
     const tPoseRaw = skinFbx.animations?.[0];
-    const tPoseClip = tPoseRaw ? tPoseRaw.clone() : new THREE.AnimationClip("tPose", 1.0, []);
+    const tPoseClip = tPoseRaw
+      ? tPoseRaw.clone()
+      : new THREE.AnimationClip("tPose", 1.0, []);
     tPoseClip.name = "tPose";
 
-    scrollStore.clips = [sitIdleClip.name, sitToStandClip.name, walkClip.name, tPoseClip.name];
+    scrollStore.clips = [
+      sitIdleClip.name,
+      sitToStandClip.name,
+      walkClip.name,
+      tPoseClip.name,
+    ];
 
     // Create Mixer Actions
     const sitAction = mixer.clipAction(sitIdleClip);
@@ -182,18 +235,22 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     const group = groupRef.current;
     if (!mixer || !actions.sitIdle || !group) return;
 
-    // Smooth damp progress (12 damper speed for reactive yet silky motion)
-    scrollStore.smoothedProgress = THREE.MathUtils.damp(
-      scrollStore.smoothedProgress,
-      scrollStore.progress,
-      12,
-      delta
-    );
+    // Smooth damp progress (or snap immediately if frozen for visual inspection)
+    if (scrollStore.isFrozen) {
+      scrollStore.smoothedProgress = scrollStore.progress;
+    } else {
+      scrollStore.smoothedProgress = THREE.MathUtils.damp(
+        scrollStore.smoothedProgress,
+        scrollStore.progress,
+        12,
+        delta
+      );
+    }
     const p = scrollStore.smoothedProgress;
 
     // Determine current stage for debug and state trackers
     if (p < 0.12) scrollStore.currentStage = "sitIdle";
-    else if (p < 0.30) scrollStore.currentStage = "sitToStand";
+    else if (p < 0.3) scrollStore.currentStage = "sitToStand";
     else if (p < 0.55) scrollStore.currentStage = "walk";
     else if (p < 0.62) scrollStore.currentStage = "armsSpread";
     else if (p < 0.95) scrollStore.currentStage = "projectReveal";
@@ -202,13 +259,12 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     // -------------------------------------------------------------
     // STAGE A: Sit Idle (0.00 to 0.12)
     // -------------------------------------------------------------
-    // Idle loops subtly while user views the hero copy
     const sitWeight = 1 - THREE.MathUtils.smoothstep(p, 0.08, 0.15);
     actions.sitIdle.setEffectiveWeight(Math.max(0, sitWeight));
     if (sitWeight > 0.01) {
       const sitDuration = actions.clips.sitIdle.duration;
-      // Loop with clock time and subtle scrub influence
-      actions.sitIdle.time = (clock.getElapsedTime() * 0.85 + p * 2) % sitDuration;
+      actions.sitIdle.time =
+        (clock.getElapsedTime() * 0.85 + p * 2) % sitDuration;
     }
 
     // -------------------------------------------------------------
@@ -222,8 +278,13 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     }
     actions.sitToStand.setEffectiveWeight(Math.max(0, standWeight));
     if (standWeight > 0.01) {
-      const standProgress = THREE.MathUtils.clamp((p - 0.12) / (0.30 - 0.12), 0, 1);
-      actions.sitToStand.time = standProgress * actions.clips.sitToStand.duration;
+      const standProgress = THREE.MathUtils.clamp(
+        (p - 0.12) / (0.3 - 0.12),
+        0,
+        1
+      );
+      actions.sitToStand.time =
+        standProgress * actions.clips.sitToStand.duration;
     }
 
     // -------------------------------------------------------------
@@ -238,15 +299,23 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     actions.walk.setEffectiveWeight(Math.max(0, walkWeight));
 
     let walkDistanceMeters = 0;
-    if (p >= 0.30) {
-      const walkNormProgress = THREE.MathUtils.clamp((p - 0.30) / (0.55 - 0.30), 0, 1);
-      // Ease out deceleration near the end of walk
-      const easedWalkProgress = THREE.MathUtils.smoothstep(walkNormProgress, 0, 1);
+    if (p >= 0.3) {
+      const walkNormProgress = THREE.MathUtils.clamp(
+        (p - 0.3) / (0.55 - 0.3),
+        0,
+        1
+      );
+      const easedWalkProgress = THREE.MathUtils.smoothstep(
+        walkNormProgress,
+        0,
+        1
+      );
       walkDistanceMeters = easedWalkProgress * AVATAR_CONFIG.walk.totalDistance;
 
       if (walkWeight > 0.01) {
-        // Precise phase tying: 1 cycle = cycleDistance (1.85m), clipDuration (1.02s)
-        const cycleProgress = (walkDistanceMeters % AVATAR_CONFIG.walk.cycleDistance) / AVATAR_CONFIG.walk.cycleDistance;
+        const cycleProgress =
+          (walkDistanceMeters % AVATAR_CONFIG.walk.cycleDistance) /
+          AVATAR_CONFIG.walk.cycleDistance;
         actions.walk.time = cycleProgress * actions.clips.walk.duration;
       }
     }
@@ -256,17 +325,17 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     // -------------------------------------------------------------
     const tPoseWeight = THREE.MathUtils.smoothstep(p, 0.51, 0.58);
     actions.tPose.setEffectiveWeight(Math.max(0, tPoseWeight));
-    actions.tPose.time = 0; // Hold rest t-pose base
+    actions.tPose.time = 0;
 
     // -------------------------------------------------------------
     // GROUP POSITION & TRANSITION CORRECTIONS
     // -------------------------------------------------------------
-    // Correct +0.27m Z shift between sitIdle and sitToStand to prevent popping
     const sitToStandBlend = THREE.MathUtils.smoothstep(p, 0.09, 0.16);
-    const zInitialOffset = (1 - sitToStandBlend) * -AVATAR_CONFIG.transitions.sitToStandZShift;
-    const yInitialOffset = (1 - sitToStandBlend) * -AVATAR_CONFIG.transitions.sitToStandYShift;
+    const zInitialOffset =
+      (1 - sitToStandBlend) * -AVATAR_CONFIG.transitions.sitToStandZShift;
+    const yInitialOffset =
+      (1 - sitToStandBlend) * -AVATAR_CONFIG.transitions.sitToStandYShift;
 
-    // Total root group position
     group.position.x = 0;
     group.position.y = yInitialOffset;
     group.position.z = zInitialOffset + walkDistanceMeters;
@@ -275,39 +344,47 @@ export default function AvatarModel({ rightHandBoneRef, leftHandBoneRef }) {
     mixer.update(0);
 
     // -------------------------------------------------------------
-    // 6. POST-ANIMATION PROCEDURAL PALM TWISTS & BREATHING
+    // 6. PROCEDURAL PALM ROLLS (ALONG LONGITUDINAL BONE AXES) & BREATHING
     // -------------------------------------------------------------
-    // Mixamo forearm roll twists so palms face UP in arms-spread pose
     if (tPoseWeight > 0.01) {
-      const armTwist = AVATAR_CONFIG.armTwist;
+      const twist = AVATAR_CONFIG.armTwist;
       const leftForeArm = bonesRef.current.leftForeArm;
       const rightForeArm = bonesRef.current.rightForeArm;
       const leftHand = bonesRef.current.leftHand;
       const rightHand = bonesRef.current.rightHand;
       const spine = bonesRef.current.spine;
 
-      // Forearm twist around long axis
+      // Rotate strictly around the longitudinal axis pointing along the bone
       if (leftForeArm) {
-        leftForeArm.rotation.y += armTwist.leftForeArm.y * tPoseWeight;
+        leftForeArm.rotateOnAxis(
+          axesRef.current.leftForeArmAxis,
+          twist.leftForeArmRoll * tPoseWeight
+        );
       }
       if (rightForeArm) {
-        rightForeArm.rotation.y += armTwist.rightForeArm.y * tPoseWeight;
+        rightForeArm.rotateOnAxis(
+          axesRef.current.rightForeArmAxis,
+          twist.rightForeArmRoll * tPoseWeight
+        );
       }
       if (leftHand) {
-        leftHand.rotation.y += armTwist.leftHand.y * tPoseWeight;
+        leftHand.rotateOnAxis(
+          axesRef.current.leftHandAxis,
+          twist.leftHandRoll * tPoseWeight
+        );
       }
       if (rightHand) {
-        rightHand.rotation.y += armTwist.rightHand.y * tPoseWeight;
+        rightHand.rotateOnAxis(
+          axesRef.current.rightHandAxis,
+          twist.rightHandRoll * tPoseWeight
+        );
       }
 
-      // Subtle breathing motion while holding pose
-      const breathing = Math.sin(clock.getElapsedTime() * 1.8) * 0.018 * tPoseWeight;
+      // Symmetrical chest and arm breathing motion
+      const breathing =
+        Math.sin(clock.getElapsedTime() * 1.8) * 0.016 * tPoseWeight;
       if (spine) {
-        spine.rotation.x += breathing * 0.5;
-      }
-      if (leftForeArm && rightForeArm) {
-        leftForeArm.rotation.z += breathing * 0.4;
-        rightForeArm.rotation.z -= breathing * 0.4;
+        spine.rotation.x += breathing * 0.4;
       }
     }
   });

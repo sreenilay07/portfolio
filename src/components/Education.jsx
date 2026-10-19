@@ -12,10 +12,7 @@ export default function Education() {
   ];
 
   return (
-    <section id="education" className="py-20 relative overflow-hidden bg-gradient-grid">
-      <div className="absolute top-1/2 left-1/4 w-80 h-80 rounded-full bg-cyan-500/5 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/3 w-80 h-80 rounded-full bg-violet-600/5 blur-3xl pointer-events-none" />
-
+    <section id="education" className="py-24 relative bg-[#030508]">
       <div className="max-w-7xl mx-auto px-6 relative z-20">
         
         {/* Section Header */}
@@ -25,7 +22,7 @@ export default function Education() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-3xl sm:text-4xl font-bold font-display text-white"
+            className="text-3xl sm:text-4xl font-bold font-display text-[#eaeef1] tracking-tight"
           >
             Academic Journey
           </motion.h2>
@@ -34,7 +31,7 @@ export default function Education() {
             whileInView={{ scaleX: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="h-[3px] w-20 bg-gradient-to-r from-violet-600 to-cyan-500 mx-auto mt-4 rounded-full"
+            className="h-[1.5px] w-12 bg-[#c59b7b] mx-auto mt-4 rounded-full"
           />
         </div>
 
@@ -46,44 +43,42 @@ export default function Education() {
             {educationData.map((edu, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, x: -30 }}
+                initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="glass-panel p-8 rounded-2xl border border-white/5 relative overflow-hidden group shadow-lg"
+                transition={{ duration: 0.5 }}
+                className="arch-card p-5 sm:p-7 rounded-2xl border border-white/[0.08] relative overflow-hidden group shadow-lg"
               >
-                <div className="absolute -top-10 -right-10 w-36 h-36 bg-violet-600/10 rounded-full blur-2xl group-hover:bg-violet-600/15 transition-all" />
-
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-violet-600/10 border border-violet-500/20 rounded-xl text-violet-400">
+                  <div className="p-3 bg-[#121a22] border border-white/[0.08] rounded-xl text-[#c59b7b]">
                     <GraduationCap className="w-6 h-6" />
                   </div>
                   <div>
-                    <span className="text-xs font-mono text-zinc-500 tracking-wider uppercase bg-zinc-900 border border-white/5 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-mono text-zinc-500 tracking-wider uppercase bg-[#121a22] border border-white/[0.06] px-2 py-0.5 rounded">
                       {edu.status}
                     </span>
-                    <h3 className="text-xl font-bold text-white font-display mt-1">{edu.degree}</h3>
+                    <h3 className="text-xl font-bold text-[#eaeef1] font-display mt-1">{edu.degree}</h3>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-lg font-semibold text-zinc-200">{edu.institution}</h4>
-                    <p className="text-zinc-400 text-sm">{edu.branch}</p>
+                    <h4 className="text-base font-semibold text-[#eaeef1]">{edu.institution}</h4>
+                    <p className="text-[#94a3b8] text-sm">{edu.branch}</p>
                   </div>
 
-                  <div className="flex flex-wrap gap-4 py-2 border-t border-b border-white/5 text-sm text-zinc-400">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4 text-cyan-400" />
+                  <div className="flex flex-wrap gap-4 py-2 border-t border-b border-white/[0.06] text-sm text-[#94a3b8]">
+                    <div className="flex items-center gap-1.5 font-mono text-xs">
+                      <Calendar className="w-3.5 h-3.5 text-[#94a3b8]" />
                       <span>{edu.duration}</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-emerald-400" />
-                      <span>CGPA: <strong className="text-white font-semibold">{edu.cgpa}</strong></span>
+                    <div className="flex items-center gap-1.5 font-mono text-xs">
+                      <Award className="w-3.5 h-3.5 text-[#c59b7b]" />
+                      <span>CGPA: <strong className="text-[#eaeef1] font-semibold">{edu.cgpa}</strong></span>
                     </div>
                   </div>
 
-                  <p className="text-zinc-400 text-sm leading-relaxed pt-2">
+                  <p className="text-[#94a3b8] text-sm leading-relaxed pt-1">
                     {edu.description}
                   </p>
                 </div>
@@ -92,47 +87,47 @@ export default function Education() {
           </div>
 
           {/* Right Column: Timeline Milestones (Track) */}
-          <div className="lg:col-span-7 relative pl-8 border-l border-zinc-800 space-y-12">
+          <div className="lg:col-span-7 relative pl-8 border-l border-white/[0.08] space-y-10">
             {milestones.map((milestone, idx) => {
               const isCurrent = milestone.title.includes("(Current)");
               return (
                 <motion.div
                   key={idx}
-                  initial={{ opacity: 0, x: 30 }}
+                  initial={{ opacity: 0, x: 20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.15 }}
+                  transition={{ duration: 0.45, delay: idx * 0.1 }}
                   className="relative group"
                 >
                   {/* Bullet indicator on the line */}
                   <div
-                    className={`absolute -left-[41px] top-1.5 w-6 h-6 rounded-full border-4 flex items-center justify-center transition-all duration-300 ${
+                    className={`absolute -left-[41px] top-1.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                       isCurrent
-                        ? "bg-violet-600 border-violet-500 shadow-md shadow-violet-500/40 scale-125"
-                        : "bg-zinc-950 border-zinc-700 group-hover:border-violet-500/50"
+                        ? "bg-[#c59b7b] border-[#eaeef1] shadow-md scale-110"
+                        : "bg-[#080d12] border-white/20 group-hover:border-[#c59b7b]"
                     }`}
                   >
                     {isCurrent ? (
-                      <Star className="w-2.5 h-2.5 text-white fill-white" />
+                      <Star className="w-2.5 h-2.5 text-[#030508] fill-[#030508]" />
                     ) : (
-                      <CheckCircle2 className="w-2.5 h-2.5 text-zinc-500 group-hover:text-violet-400" />
+                      <CheckCircle2 className="w-2.5 h-2.5 text-zinc-500 group-hover:text-[#c59b7b]" />
                     )}
                   </div>
 
-                  <div className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-white/10 shadow-md group-hover:shadow-lg transition-all duration-300">
+                  <div className="arch-card p-6 rounded-2xl border border-white/[0.08] hover:border-white/20 transition-all duration-200">
                     <span
-                      className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                      className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded ${
                         isCurrent
-                          ? "bg-violet-500/20 text-violet-400 border border-violet-500/30"
-                          : "bg-zinc-900 text-zinc-400 border border-white/5"
+                          ? "bg-[#c59b7b]/15 text-[#c59b7b] border border-[#c59b7b]/30"
+                          : "bg-[#121a22] text-[#94a3b8] border border-white/[0.06]"
                       }`}
                     >
                       {milestone.year}
                     </span>
-                    <h4 className="text-white font-bold text-base sm:text-lg mt-2 mb-1 font-display">
+                    <h4 className="text-[#eaeef1] font-bold text-base mt-2 mb-1 font-display">
                       {milestone.title}
                     </h4>
-                    <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
+                    <p className="text-[#94a3b8] text-xs sm:text-sm leading-relaxed">
                       {milestone.desc}
                     </p>
                   </div>

@@ -12,6 +12,10 @@ export const scrollStore = {
   // Smoothed damp value computed in useFrame
   smoothedProgress: 0,
 
+  // Progress freeze state for visual debugging (?debug=1&p=0.xx)
+  isFrozen: false,
+  frozenProgress: null,
+
   // Current stage identifier
   currentStage: "sitIdle",
 

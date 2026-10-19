@@ -8,13 +8,12 @@ import { personalInfo } from "../data/personalInfo";
 export default function Contact() {
   const [formData, setFormData] = useState({ name: "", subject: "", message: "" });
   const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState("idle"); // "idle" | "submitting" | "success"
+  const [status, setStatus] = useState("idle");
   const [toastMessage, setToastMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear validation error when typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -41,27 +40,23 @@ export default function Contact() {
 
     setStatus("submitting");
 
-    // Construct the email body
     const emailBody = `Hi Sree Nilay,\n\nMy Name: ${formData.name}\n\nMessage:\n${formData.message}\n\nRegards,\n${formData.name}`;
     
-    // Construct the Gmail URL to directly open the Gmail web composer
     const gmailUrl = 
       `https://mail.google.com/mail/?view=cm&fs=1&to=sreenilayreddy@gmail.com` +
       `&su=${encodeURIComponent(formData.subject)}` +
       `&body=${encodeURIComponent(emailBody)}`;
     
-    // Open Gmail in a new tab
     window.open(gmailUrl, '_blank');
 
-    // Trigger visual success states after redirect
     setTimeout(() => {
       setStatus("success");
       
       confetti({
-        particleCount: 150,
-        spread: 80,
+        particleCount: 100,
+        spread: 70,
         origin: { y: 0.6 },
-        colors: ["#8b5cf6", "#06b6d4", "#10b981"]
+        colors: ["#c59b7b", "#eaeef1", "#94a3b8", "#121a22"]
       });
 
       setFormData({ name: "", subject: "", message: "" });
@@ -75,37 +70,34 @@ export default function Contact() {
   const getIcon = (name) => {
     switch (name.toLowerCase()) {
       case "email":
-        return <Mail className="w-5 h-5 text-emerald-400" />;
+        return <Mail className="w-5 h-5 text-[#c59b7b]" />;
       case "phone":
-        return <Phone className="w-5 h-5 text-cyan-400" />;
+        return <Phone className="w-5 h-5 text-[#94a3b8]" />;
       case "location":
-        return <MapPin className="w-5 h-5 text-rose-400" />;
+        return <MapPin className="w-5 h-5 text-[#eaeef1]" />;
       case "linkedin":
-        return <Linkedin className="w-5 h-5 text-sky-400" />;
+        return <Linkedin className="w-5 h-5 text-[#94a3b8]" />;
       default:
-        return <Github className="w-5 h-5 text-zinc-300" />;
+        return <Github className="w-5 h-5 text-[#eaeef1]" />;
     }
   };
 
   return (
-    <section id="contact" className="py-20 relative bg-zinc-950/40">
+    <section id="contact" className="py-24 relative bg-[#030508]">
       {/* Toast Notification */}
       <AnimatePresence>
         {toastMessage && (
           <motion.div
-            initial={{ opacity: 0, y: 50, x: "-50%" }}
+            initial={{ opacity: 0, y: 30, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
-            exit={{ opacity: 0, y: 50, x: "-50%" }}
-            className="fixed bottom-10 left-1/2 z-50 px-6 py-3.5 rounded-2xl glass-panel border border-rose-500/30 bg-zinc-950/90 text-rose-400 text-sm font-medium shadow-2xl shadow-rose-500/10 flex items-center gap-3 backdrop-blur-xl"
+            exit={{ opacity: 0, y: 30, x: "-50%" }}
+            className="fixed bottom-10 left-1/2 z-50 px-5 py-3 rounded-xl bg-[#080d12] border border-rose-500/30 text-rose-400 text-xs font-medium shadow-2xl flex items-center gap-2.5 backdrop-blur-xl"
           >
-            <AlertCircle className="w-5 h-5 text-rose-500" />
+            <AlertCircle className="w-4 h-4 text-rose-500" />
             {toastMessage}
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="absolute top-1/2 left-0 sm:left-1/4 w-64 sm:w-[400px] h-64 sm:h-[400px] bg-violet-600/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-10 right-0 sm:right-1/4 w-64 sm:w-[400px] h-64 sm:h-[400px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-20">
         
@@ -116,7 +108,7 @@ export default function Contact() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-3xl sm:text-4xl font-bold font-display text-white"
+            className="text-3xl sm:text-4xl font-bold font-display text-[#eaeef1] tracking-tight"
           >
             Get In Touch
           </motion.h2>
@@ -125,9 +117,9 @@ export default function Contact() {
             whileInView={{ scaleX: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="h-[3px] w-20 bg-gradient-to-r from-violet-600 to-cyan-500 mx-auto mt-4 rounded-full"
+            className="h-[1.5px] w-12 bg-[#c59b7b] mx-auto mt-4 rounded-full"
           />
-          <p className="text-zinc-500 text-xs sm:text-sm mt-4 max-w-xl mx-auto font-medium">
+          <p className="text-[#94a3b8] text-xs sm:text-sm mt-4 max-w-xl mx-auto font-normal">
             Have a project query, collaboration idea, or career opportunity? Shoot a message!
           </p>
         </div>
@@ -137,36 +129,36 @@ export default function Contact() {
           
           {/* Left Column: Direct info lists */}
           <div className="lg:col-span-5 flex flex-col justify-between gap-6">
-            <div className="space-y-6">
-              <h3 className="text-xl sm:text-2xl font-bold text-white font-display">
-                Let's discuss something great
+            <div className="space-y-4">
+              <h3 className="text-xl sm:text-2xl font-bold text-[#eaeef1] font-display">
+                Let&apos;s build something exceptional
               </h3>
-              <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
+              <p className="text-[#94a3b8] text-sm sm:text-base leading-relaxed">
                 I am responsive to emails, messages, and calls. Reach out directly or complete the contact form to initiate discussion.
               </p>
             </div>
 
-            <div className="space-y-4 my-6">
+            <div className="space-y-3 my-4">
               {socialLinks.map((link, idx) => (
                 <motion.a
                   key={idx}
                   href={link.url}
                   target={link.name !== "Phone" ? "_blank" : undefined}
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -15 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: idx * 0.1 }}
-                  className="flex items-center gap-4 p-4 rounded-xl glass-panel border border-white/5 hover:border-violet-500/20 hover:bg-zinc-900/30 transition-all group"
+                  transition={{ duration: 0.35, delay: idx * 0.08 }}
+                  className="flex items-center gap-4 p-4 rounded-xl arch-card border border-white/[0.08] hover:border-white/20 transition-all group"
                 >
-                  <div className="p-3 bg-zinc-900 border border-white/5 rounded-xl group-hover:scale-110 transition-transform">
+                  <div className="p-2.5 bg-[#121a22] border border-white/[0.08] rounded-xl group-hover:scale-105 transition-transform">
                     {getIcon(link.name)}
                   </div>
                   <div>
                     <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block">
                       {link.name}
                     </span>
-                    <span className="text-zinc-200 text-sm sm:text-base font-semibold font-display group-hover:text-violet-400 transition-colors">
+                    <span className="text-[#eaeef1] text-sm font-semibold font-display group-hover:text-white transition-colors">
                       {link.username}
                     </span>
                   </div>
@@ -175,12 +167,12 @@ export default function Contact() {
             </div>
 
             <div className="text-xs text-zinc-500 font-mono">
-              IP Location: {personalInfo.location}
+              Location: {personalInfo.location}
             </div>
           </div>
 
           {/* Right Column: Form Panel */}
-          <div className="lg:col-span-7 glass-panel p-6 sm:p-8 rounded-2xl border border-white/5 shadow-xl flex flex-col justify-center">
+          <div className="lg:col-span-7 arch-card p-4 sm:p-8 rounded-2xl border border-white/[0.08] shadow-xl flex flex-col justify-center">
             <AnimatePresence mode="wait">
               {status === "success" ? (
                 <motion.div
@@ -189,12 +181,12 @@ export default function Contact() {
                   exit={{ opacity: 0 }}
                   className="text-center py-12 space-y-4"
                 >
-                  <div className="inline-flex p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full animate-bounce">
-                    <CheckCircle2 className="w-12 h-12" />
+                  <div className="inline-flex p-3 bg-[#c59b7b]/15 border border-[#c59b7b]/30 text-[#c59b7b] rounded-full">
+                    <CheckCircle2 className="w-10 h-10" />
                   </div>
-                  <h4 className="text-2xl font-bold font-display text-white">Message Transmitted!</h4>
-                  <p className="text-zinc-400 text-sm max-w-sm mx-auto leading-relaxed">
-                    Thank you for reaching out. Your communication has been dispatched. Nilay will get back to you shortly.
+                  <h4 className="text-2xl font-bold font-display text-[#eaeef1]">Message Sent</h4>
+                  <p className="text-[#94a3b8] text-sm max-w-sm mx-auto leading-relaxed">
+                    Thank you for reaching out. Nilay will get back to you shortly.
                   </p>
                 </motion.div>
               ) : (
@@ -208,9 +200,9 @@ export default function Contact() {
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 rounded-xl bg-zinc-950/60 border ${
-                          errors.name ? "border-rose-500/50 focus:border-rose-500" : "border-white/5 focus:border-violet-500"
-                        } text-white text-sm outline-none transition-colors`}
+                        className={`w-full px-4 py-3 rounded-xl bg-[#05080c] border ${
+                          errors.name ? "border-rose-500/50 focus:border-rose-500" : "border-white/[0.08] focus:border-[#c59b7b]"
+                        } text-[#eaeef1] text-base sm:text-sm outline-none transition-colors placeholder:text-zinc-600`}
                         placeholder="Elon Musk"
                       />
                       {errors.name && <span className="text-[11px] text-rose-500 font-mono block">{errors.name}</span>}
@@ -224,10 +216,10 @@ export default function Contact() {
                         name="subject"
                         value={formData.subject}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 rounded-xl bg-zinc-950/60 border ${
-                          errors.subject ? "border-rose-500/50 focus:border-rose-500" : "border-white/5 focus:border-violet-500"
-                        } text-white text-sm outline-none transition-colors`}
-                        placeholder="Co-founder opportunities at xAI"
+                        className={`w-full px-4 py-3 rounded-xl bg-[#05080c] border ${
+                          errors.subject ? "border-rose-500/50 focus:border-rose-500" : "border-white/[0.08] focus:border-[#c59b7b]"
+                        } text-[#eaeef1] text-base sm:text-sm outline-none transition-colors placeholder:text-zinc-600`}
+                        placeholder="Project Collaboration"
                       />
                       {errors.subject && <span className="text-[11px] text-rose-500 font-mono block">{errors.subject}</span>}
                     </div>
@@ -241,10 +233,10 @@ export default function Contact() {
                       rows="4"
                       value={formData.message}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-xl bg-zinc-950/60 border ${
-                        errors.message ? "border-rose-500/50 focus:border-rose-500" : "border-white/5 focus:border-violet-500"
-                      } text-white text-sm outline-none transition-colors resize-none`}
-                      placeholder="Hey Nilay, saw your proctoring app. Let's discuss an internship deal..."
+                      className={`w-full px-4 py-3 rounded-xl bg-[#05080c] border ${
+                        errors.message ? "border-rose-500/50 focus:border-rose-500" : "border-white/[0.08] focus:border-[#c59b7b]"
+                      } text-[#eaeef1] text-base sm:text-sm outline-none transition-colors resize-none placeholder:text-zinc-600`}
+                      placeholder="Hi Nilay, I saw your proctoring system and would like to discuss..."
                     />
                     {errors.message && <span className="text-[11px] text-rose-500 font-mono block">{errors.message}</span>}
                   </div>
@@ -253,17 +245,17 @@ export default function Contact() {
                   <button
                     type="submit"
                     disabled={status === "submitting"}
-                    className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 disabled:opacity-50 text-white font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:shadow-violet-500/10 focus:outline-none"
+                    className="w-full mt-2 py-3.5 rounded-xl bg-[#eaeef1] hover:bg-white text-[#030508] font-semibold text-xs tracking-wider uppercase disabled:opacity-50 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md focus:outline-none"
                   >
                     {status === "submitting" ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
-                        <span>Transmitting Packets...</span>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#030508]" />
+                        <span>Sending Message...</span>
                       </>
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        <span>Transmit Message</span>
+                        <span>Send Message</span>
                       </>
                     )}
                   </button>

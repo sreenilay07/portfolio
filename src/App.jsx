@@ -28,10 +28,10 @@ function App() {
         ) : (
           <div
             key="content"
-            className="relative min-h-screen bg-[#09090b] text-zinc-100 overflow-x-clip selection:bg-violet-600/30 selection:text-white"
+            className="relative min-h-screen bg-[#030508] text-[#eaeef1] overflow-x-clip selection:bg-[#c59b7b]/25 selection:text-white"
           >
-            {/* Ambient Background Mesh */}
-            <div className="fixed inset-0 grid-bg-lines pointer-events-none z-0 opacity-80" />
+            {/* Ambient Quiet Backdrop */}
+            <div className="fixed inset-0 bg-ambient-dark pointer-events-none z-0" />
             <ParticlesBg />
 
             {/* Sticky Navigation Header */}

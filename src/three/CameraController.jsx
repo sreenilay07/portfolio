@@ -8,14 +8,18 @@ import { scrollStore } from "./scrollStore";
  * CameraController
  * Smoothly dollies and tracks the camera across the scroll timeline.
  * Keyframes are defined in avatarConfig.js.
- * Adds subtle mouse parallax (max 0.15m).
+ * - Early phase (0.00 to 0.12): shifts camera laterally so avatar is at ~65% width on the right,
+ *   leaving the left 45% exclusively for the Hero text.
+ * - Mid phase (0.12 to 0.30): eases back to centered for walk and arms spread.
+ * - Project phase (0.62 to 0.95): raised and pulled back to frame full body, hands, and floating card.
  */
 export default function CameraController() {
   const { camera } = useThree();
-  const currentPosRef = useRef(new THREE.Vector3());
-  const currentTargetRef = useRef(new THREE.Vector3());
-  const targetPosRef = useRef(new THREE.Vector3());
-  const targetLookRef = useRef(new THREE.Vector3());
+  const kf = AVATAR_CONFIG.camera.keyframes;
+  const currentPosRef = useRef(new THREE.Vector3(...kf.sit.position));
+  const currentTargetRef = useRef(new THREE.Vector3(...kf.sit.target));
+  const targetPosRef = useRef(new THREE.Vector3(...kf.sit.position));
+  const targetLookRef = useRef(new THREE.Vector3(...kf.sit.target));
   const parallaxRef = useRef({ x: 0, y: 0 });
 
   useFrame((_, delta) => {
@@ -28,11 +32,11 @@ export default function CameraController() {
 
     // Segmented camera interpolation across timeline stages
     if (p < 0.12) {
-      // Sit Idle: Fixed chest/head level view
+      // Sit Idle: Lateral offset applied so avatar is at ~65% viewport width on right
       targetPos.set(...kf.sit.position);
       targetLook.set(...kf.sit.target);
     } else if (p < 0.30) {
-      // Sit to Stand: Camera eases slightly back
+      // Sit to Stand: Smoothly ease lateral offset back to centered
       const t = THREE.MathUtils.smoothstep(p, 0.12, 0.30);
       targetPos.lerpVectors(
         new THREE.Vector3(...kf.sit.position),
@@ -58,7 +62,7 @@ export default function CameraController() {
         t
       );
     } else {
-      // Arms Spread & Project Reveal: Stable wide cinematic framing
+      // Arms Spread & Project Reveal: Raised and pulled back framing
       const t = THREE.MathUtils.smoothstep(p, 0.55, 0.65);
       targetPos.lerpVectors(
         new THREE.Vector3(...kf.walkEnd.position),
@@ -89,6 +93,14 @@ export default function CameraController() {
       6,
       delta
     );
+
+    if (scrollStore.isFrozen) {
+      currentPos.copy(targetPos);
+      currentTarget.copy(targetLook);
+      camera.position.copy(currentPos);
+      camera.lookAt(currentTarget);
+      return;
+    }
 
     // Apply smoothed position
     currentPos.x = THREE.MathUtils.damp(

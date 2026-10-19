@@ -1,3 +1,5 @@
+import { projectsData } from "./projects";
+
 export const personalInfo = {
   name: "Minumula Sree Nilay Reddy",
   firstName: "Sree Nilay",
@@ -21,7 +23,7 @@ export const personalInfo = {
   ],
   stats: [
     { label: "CGPA", value: "8.6" },
-    { label: "Projects Built", value: "3" }, // Can be calculated dynamically, but we keep it here as requested
+    { label: "Projects Built", value: `${projectsData.length}` },
     { label: "Technologies Used", value: "20+" },
     { label: "Years of Learning", value: "3" }
   ]

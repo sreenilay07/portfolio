@@ -1,81 +1,148 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { ContactShadows, Html } from "@react-three/drei";
+import { ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 import { AVATAR_CONFIG } from "./avatarConfig";
-import { personalInfo } from "../data/personalInfo";
+import { scrollStore } from "./scrollStore";
 
 /**
  * StageFurniture
- * Renders the chair, desk, laptop, floating holographic ID card,
- * and reflective dark glossy floor with contact shadows.
+ * Renders:
+ * - Studio chair (positioned behind avatar; front walking path 100% free of obstacles)
+ * - Side console table (stage left of avatar at x = 0.68m) with open laptop
+ * - Near-black navy floor with thin subtle violet grid, soft radial glow under avatar,
+ *   and smooth horizon fade
  */
 export default function StageFurniture() {
-  const badgeRef = useRef(null);
-  const glowEdgeMaterial = new THREE.MeshBasicMaterial({
-    color: AVATAR_CONFIG.materials.rimColor,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.25,
-  });
+  const floorMeshRef = useRef(null);
+  const floorMatRef = useRef(null);
+  const radialGlowRef = useRef(null);
+  const gridRef = useRef(null);
 
-  // Micro-floating animation for the holographic badge
-  useFrame(({ clock }) => {
-    if (badgeRef.current) {
-      badgeRef.current.position.y =
-        1.15 + Math.sin(clock.getElapsedTime() * 1.5) * 0.025;
-      badgeRef.current.rotation.y =
-        Math.PI * 0.12 + Math.sin(clock.getElapsedTime() * 0.8) * 0.04;
-    }
-  });
+  const glowEdgeMaterial = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: AVATAR_CONFIG.materials.rimColor,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.35,
+      }),
+    []
+  );
+
+  // Custom soft radial glow material under the avatar
+  const radialGlowMaterial = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      uniforms: {
+        uColorInner: { value: new THREE.Color("#1c2f44") },
+        uColorOuter: { value: new THREE.Color("#05080c") },
+        uOpacity: { value: 0.18 },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uColorInner;
+        uniform vec3 uColorOuter;
+        uniform float uOpacity;
+        varying vec2 vUv;
+        void main() {
+          float dist = distance(vUv, vec2(0.5));
+          if (dist > 0.5) discard;
+          float factor = 1.0 - smoothstep(0.0, 0.5, dist);
+          vec3 col = mix(uColorOuter, uColorInner, factor);
+          gl_FragColor = vec4(col, factor * factor * uOpacity);
+        }
+      `,
+    });
+  }, []);
 
   const seatY = AVATAR_CONFIG.seat.surfaceHeight;
   const seatZ = AVATAR_CONFIG.seat.centerZ;
-  const deskZ = AVATAR_CONFIG.desk.centerZ;
-  const deskY = AVATAR_CONFIG.desk.height;
+  const st = AVATAR_CONFIG.sideTable;
+
+  // Frame animations: floor and glow fade near stage end (0.95 to 1.00)
+  useFrame(() => {
+    const p = scrollStore.smoothedProgress;
+    let fade = 1.0;
+    if (p > 0.95) {
+      fade = THREE.MathUtils.clamp(1 - (p - 0.95) / 0.05, 0, 1);
+    }
+
+    if (radialGlowRef.current) {
+      radialGlowRef.current.material.uniforms.uOpacity.value = 0.22 * fade;
+    }
+    if (floorMatRef.current) {
+      floorMatRef.current.opacity = fade;
+    }
+    if (gridRef.current) {
+      gridRef.current.visible = fade > 0.02;
+    }
+  });
 
   return (
     <group>
       {/* ============================================================ */}
-      {/* 1. Glossy Dark Floor with Subtle Grid                        */}
+      {/* 1. Near-Black Navy Floor with Thin Subtle Grid               */}
       {/* ============================================================ */}
       <mesh
+        ref={floorMeshRef}
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.005, 1.5]}
+        position={[0, -0.005, 2.0]}
         receiveShadow
       >
-        <planeGeometry args={[30, 30]} />
+        <planeGeometry args={[50, 50]} />
         <meshStandardMaterial
-          color="#08080c"
-          roughness={0.18}
-          metalness={0.85}
+          ref={floorMatRef}
+          color={AVATAR_CONFIG.materials.floorColor}
+          roughness={AVATAR_CONFIG.materials.floorRoughness}
+          metalness={AVATAR_CONFIG.materials.floorMetalness}
+          transparent
+          opacity={1}
         />
       </mesh>
 
-      {/* Subtle floor grid lines */}
+      {/* Thin, low-opacity muted architectural grid lines */}
       <gridHelper
-        args={[30, 30, "#8b5cf6", "#1e1e2d"]}
-        position={[0, 0, 1.5]}
+        ref={gridRef}
+        args={[40, 40, "#1c2f44", "#080d12"]}
+        position={[0, 0.001, 2.0]}
       />
 
-      {/* Soft Contact Shadows beneath furniture and avatar */}
+      {/* Soft radial cyan/violet glow strictly under and around the avatar */}
+      <mesh
+        ref={radialGlowRef}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.003, 1.2]}
+      >
+        <planeGeometry args={[7.5, 7.5]} />
+        <primitive object={radialGlowMaterial} attach="material" />
+      </mesh>
+
+      {/* Ground Contact Shadows beneath character and furniture */}
       <ContactShadows
-        position={[0, 0, 1.5]}
-        opacity={0.7}
+        position={[0, 0.002, 1.5]}
+        opacity={0.65}
         scale={12}
-        blur={2}
-        far={4}
+        blur={2.5}
+        far={5}
         color="#000000"
       />
 
       {/* ============================================================ */}
-      {/* 2. Executive Studio Chair                                    */}
+      {/* 2. Executive Studio Chair (Behind Avatar at z = -0.26m)      */}
       {/* ============================================================ */}
       <group position={[0, 0, 0]}>
         {/* Castor Base Hub */}
         <mesh position={[0, 0.05, seatZ]} castShadow>
-          <cylinderGeometry args={[0.08, 0.10, 0.08, 16]} />
-          <meshStandardMaterial color="#18181f" metalness={0.9} roughness={0.2} />
+          <cylinderGeometry args={[0.08, 0.1, 0.08, 16]} />
+          <meshStandardMaterial color="#16171f" metalness={0.9} roughness={0.2} />
         </mesh>
 
         {/* 5-Leg Base */}
@@ -92,9 +159,9 @@ export default function StageFurniture() {
               rotation={[0, rad, 0]}
               castShadow
             >
-              <boxGeometry args={[0.04, 0.025, 0.26]} />
+              <boxGeometry args={[0.04, 0.025, 0.24]} />
               <meshStandardMaterial
-                color="#121318"
+                color="#12131a"
                 metalness={0.9}
                 roughness={0.2}
               />
@@ -104,11 +171,11 @@ export default function StageFurniture() {
 
         {/* Hydraulic Cylinder */}
         <mesh position={[0, 0.25, seatZ]} castShadow>
-          <cylinderGeometry args={[0.03, 0.03, 0.35, 16]} />
-          <meshStandardMaterial color="#272732" metalness={0.95} roughness={0.1} />
+          <cylinderGeometry args={[0.028, 0.028, 0.35, 16]} />
+          <meshStandardMaterial color="#232430" metalness={0.95} roughness={0.1} />
         </mesh>
 
-        {/* Seat Cushion (Top surface at seatY = 0.47) */}
+        {/* Seat Cushion (Top surface at seatY = 0.47m) */}
         <mesh position={[0, seatY - 0.04, seatZ]} castShadow receiveShadow>
           <boxGeometry
             args={[
@@ -118,9 +185,9 @@ export default function StageFurniture() {
             ]}
           />
           <meshStandardMaterial
-            color="#14141c"
-            metalness={0.4}
-            roughness={0.5}
+            color="#13141c"
+            metalness={0.35}
+            roughness={0.55}
           />
         </mesh>
 
@@ -139,17 +206,17 @@ export default function StageFurniture() {
         {/* Chair Backrest */}
         <group position={[0, seatY + 0.32, seatZ - 0.22]}>
           <mesh castShadow receiveShadow rotation={[-0.08, 0, 0]}>
-            <boxGeometry args={[0.46, 0.60, 0.06]} />
+            <boxGeometry args={[0.46, 0.58, 0.05]} />
             <meshStandardMaterial
-              color="#14141c"
-              metalness={0.4}
-              roughness={0.5}
+              color="#13141c"
+              metalness={0.35}
+              roughness={0.55}
             />
           </mesh>
 
           {/* Cyan Glow outline seam on backrest */}
           <mesh rotation={[-0.08, 0, 0]}>
-            <boxGeometry args={[0.465, 0.605, 0.065]} />
+            <boxGeometry args={[0.465, 0.585, 0.055]} />
             <primitive object={glowEdgeMaterial} attach="material" />
           </mesh>
         </group>
@@ -157,93 +224,79 @@ export default function StageFurniture() {
         {/* Left Armrest */}
         <group position={[-0.26, seatY + 0.16, seatZ]}>
           <mesh position={[0, -0.08, 0]} castShadow>
-            <cylinderGeometry args={[0.015, 0.015, 0.20, 8]} />
-            <meshStandardMaterial color="#20202a" metalness={0.8} roughness={0.3} />
+            <cylinderGeometry args={[0.014, 0.014, 0.2, 8]} />
+            <meshStandardMaterial color="#1e1f2a" metalness={0.8} roughness={0.3} />
           </mesh>
           <mesh position={[0, 0.02, 0]} castShadow>
-            <boxGeometry args={[0.06, 0.03, 0.28]} />
-            <meshStandardMaterial color="#101116" roughness={0.6} />
+            <boxGeometry args={[0.055, 0.028, 0.26]} />
+            <meshStandardMaterial color="#0f1016" roughness={0.6} />
           </mesh>
         </group>
 
         {/* Right Armrest */}
         <group position={[0.26, seatY + 0.16, seatZ]}>
           <mesh position={[0, -0.08, 0]} castShadow>
-            <cylinderGeometry args={[0.015, 0.015, 0.20, 8]} />
-            <meshStandardMaterial color="#20202a" metalness={0.8} roughness={0.3} />
+            <cylinderGeometry args={[0.014, 0.014, 0.2, 8]} />
+            <meshStandardMaterial color="#1e1f2a" metalness={0.8} roughness={0.3} />
           </mesh>
           <mesh position={[0, 0.02, 0]} castShadow>
-            <boxGeometry args={[0.06, 0.03, 0.28]} />
-            <meshStandardMaterial color="#101116" roughness={0.6} />
+            <boxGeometry args={[0.055, 0.028, 0.26]} />
+            <meshStandardMaterial color="#0f1016" roughness={0.6} />
           </mesh>
         </group>
       </group>
 
       {/* ============================================================ */}
-      {/* 3. Obsidian Modern Minimalist Desk                           */}
+      {/* 3. Side Console Table (Stage Left of Avatar, at x = 0.68m)   */}
+      {/*    Walking corridor (-0.4m to +0.4m) is COMPLETELY free!     */}
       {/* ============================================================ */}
-      <group position={[0, 0, deskZ]}>
-        {/* Smoked glass / obsidian desktop surface (top at deskY = 0.72) */}
-        <mesh position={[0, deskY - 0.02, 0]} castShadow receiveShadow>
-          <boxGeometry
-            args={[
-              AVATAR_CONFIG.desk.width,
-              0.04,
-              AVATAR_CONFIG.desk.depth,
-            ]}
-          />
+      <group position={[st.x, 0, st.z]}>
+        {/* Table Top Surface (Height 0.54m) */}
+        <mesh position={[0, st.height - 0.015, 0]} castShadow receiveShadow>
+          <boxGeometry args={[st.width, 0.03, st.depth]} />
           <meshPhysicalMaterial
-            color="#0b0c10"
-            metalness={0.8}
+            color="#090a10"
+            metalness={0.85}
             roughness={0.15}
             clearcoat={1.0}
             clearcoatRoughness={0.1}
           />
         </mesh>
 
-        {/* Emissive cyan rim along desk perimeter */}
-        <mesh position={[0, deskY - 0.02, 0]}>
-          <boxGeometry
-            args={[
-              AVATAR_CONFIG.desk.width + 0.005,
-              0.045,
-              AVATAR_CONFIG.desk.depth + 0.005,
-            ]}
-          />
+        {/* Glowing Cyan Perimeter Edge */}
+        <mesh position={[0, st.height - 0.015, 0]}>
+          <boxGeometry args={[st.width + 0.005, 0.035, st.depth + 0.005]} />
           <primitive object={glowEdgeMaterial} attach="material" />
         </mesh>
 
-        {/* Left Matte Metal Leg */}
-        <mesh
-          position={[-AVATAR_CONFIG.desk.width / 2 + 0.06, (deskY - 0.04) / 2, 0]}
-          castShadow
-        >
-          <boxGeometry args={[0.04, deskY - 0.04, AVATAR_CONFIG.desk.depth - 0.1]} />
-          <meshStandardMaterial color="#181820" metalness={0.85} roughness={0.3} />
+        {/* Minimalist Matte Metal Pillar Base */}
+        <mesh position={[0, (st.height - 0.03) / 2, 0]} castShadow>
+          <cylinderGeometry args={[0.035, 0.045, st.height - 0.03, 16]} />
+          <meshStandardMaterial color="#15161f" metalness={0.9} roughness={0.25} />
         </mesh>
 
-        {/* Right Matte Metal Leg */}
-        <mesh
-          position={[AVATAR_CONFIG.desk.width / 2 - 0.06, (deskY - 0.04) / 2, 0]}
-          castShadow
-        >
-          <boxGeometry args={[0.04, deskY - 0.04, AVATAR_CONFIG.desk.depth - 0.1]} />
-          <meshStandardMaterial color="#181820" metalness={0.85} roughness={0.3} />
+        {/* Weighted Base Plate */}
+        <mesh position={[0, 0.015, 0]} castShadow>
+          <cylinderGeometry args={[0.18, 0.2, 0.025, 24]} />
+          <meshStandardMaterial color="#111218" metalness={0.9} roughness={0.25} />
         </mesh>
 
         {/* ============================================================ */}
-        {/* 4. Open Modern Laptop on Desk                                */}
+        {/* 4. Open Laptop on Side Table (Angled towards avatar)         */}
         {/* ============================================================ */}
-        <group position={[0, deskY, 0]}>
+        <group
+          position={[-0.02, st.height, 0.02]}
+          rotation={[0, -0.45, 0]}
+        >
           {/* Base Chassis */}
-          <mesh position={[0, 0.005, 0.04]} castShadow>
-            <boxGeometry args={[0.32, 0.008, 0.22]} />
-            <meshStandardMaterial color="#1f2029" metalness={0.9} roughness={0.25} />
+          <mesh position={[0, 0.005, 0.03]} castShadow>
+            <boxGeometry args={[0.28, 0.008, 0.2]} />
+            <meshStandardMaterial color="#1c1d26" metalness={0.9} roughness={0.25} />
           </mesh>
 
-          {/* Glowing Trackpad */}
-          <mesh position={[0, 0.0095, 0.09]}>
-            <planeGeometry args={[0.10, 0.06]} />
+          {/* Trackpad */}
+          <mesh position={[0, 0.0095, 0.075]}>
+            <planeGeometry args={[0.08, 0.05]} />
             <meshStandardMaterial
               color="#090a0f"
               roughness={0.3}
@@ -252,94 +305,30 @@ export default function StageFurniture() {
           </mesh>
 
           {/* Tilted Screen Display */}
-          <group position={[0, 0.009, -0.06]} rotation={[0.22, 0, 0]}>
-            {/* Screen lid / back */}
-            <mesh position={[0, 0.10, 0]} castShadow>
-              <boxGeometry args={[0.32, 0.20, 0.006]} />
+          <group position={[0, 0.009, -0.055]} rotation={[0.22, 0, 0]}>
+            {/* Screen Lid */}
+            <mesh position={[0, 0.09, 0]} castShadow>
+              <boxGeometry args={[0.28, 0.18, 0.006]} />
               <meshStandardMaterial
-                color="#12131a"
+                color="#111218"
                 metalness={0.9}
                 roughness={0.25}
               />
             </mesh>
 
             {/* Glowing Screen Content */}
-            <mesh position={[0, 0.10, 0.0035]}>
-              <planeGeometry args={[0.30, 0.18]} />
-              <meshBasicMaterial color="#0e1526" />
+            <mesh position={[0, 0.09, 0.0035]}>
+              <planeGeometry args={[0.26, 0.16]} />
+              <meshBasicMaterial color="#0c1222" />
             </mesh>
 
-            {/* Cyan code glow stripe on screen */}
-            <mesh position={[-0.04, 0.10, 0.004]}>
-              <planeGeometry args={[0.18, 0.12]} />
-              <meshBasicMaterial color="#06b6d4" transparent opacity={0.6} />
+            {/* Steel-slate code lines glow */}
+            <mesh position={[-0.03, 0.09, 0.004]}>
+              <planeGeometry args={[0.15, 0.1]} />
+              <meshBasicMaterial color="#8da0af" transparent opacity={0.4} />
             </mesh>
           </group>
         </group>
-      </group>
-
-      {/* ============================================================ */}
-      {/* 5. Floating Holographic ID Card near Avatar                  */}
-      {/* ============================================================ */}
-      <group ref={badgeRef} position={[-0.60, 1.15, 0.0]}>
-        {/* Glass badge backing */}
-        <mesh>
-          <planeGeometry args={[0.36, 0.22]} />
-          <meshPhysicalMaterial
-            color="#09090f"
-            transmission={0.85}
-            opacity={0.95}
-            transparent
-            roughness={0.2}
-            ior={1.5}
-            thickness={0.02}
-          />
-        </mesh>
-
-        {/* Cyan Emissive Border Frame */}
-        <mesh position={[0, 0, 0.002]}>
-          <planeGeometry args={[0.365, 0.225]} />
-          <primitive object={glowEdgeMaterial} attach="material" />
-        </mesh>
-
-        {/* HTML Content inside Badge */}
-        <Html
-          transform
-          distanceFactor={1.2}
-          position={[0, 0, 0.005]}
-          style={{
-            pointerEvents: "none",
-            userSelect: "none",
-            width: "280px",
-          }}
-        >
-          <div className="p-3 rounded-xl border border-cyan-500/30 bg-zinc-950/80 backdrop-blur-md shadow-2xl flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg overflow-hidden border border-violet-500/40 shrink-0 bg-zinc-900">
-              <img
-                src={personalInfo.avatarUrl || "/avatar.png"}
-                alt={personalInfo.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = "/avatar.png";
-                }}
-              />
-            </div>
-            <div className="overflow-hidden">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest font-semibold">
-                  ONLINE
-                </span>
-              </div>
-              <h4 className="text-white font-bold text-xs font-display truncate">
-                {personalInfo.name}
-              </h4>
-              <p className="text-[10px] text-zinc-400 font-mono truncate">
-                AI &amp; Full-Stack Eng.
-              </p>
-            </div>
-          </div>
-        </Html>
       </group>
     </group>
   );

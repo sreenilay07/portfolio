@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Terminal } from "lucide-react";
 import { personalInfo } from "../data/personalInfo";
@@ -7,7 +7,9 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [scrolled, setScrolled] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const progressBarRef = useRef(null);
+  const scrolledRef = useRef(false);
+  const activeSectionRef = useRef("home");
 
   const navItems = useMemo(
     () => [
@@ -24,30 +26,42 @@ export default function Navbar() {
   );
 
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      // Background blur trigger
-      setScrolled(window.scrollY > 20);
-
-      // Scroll progress indicator
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrolledPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      setScrollProgress(scrolledPercent);
-
-      // Active section calculation
-      const sections = navItems.map((item) => document.getElementById(item.id));
-      const scrollPosition = window.scrollY + 120;
-
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i];
-        if (section) {
-          const offsetTop = section.offsetTop;
-          const offsetHeight = section.offsetHeight;
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(navItems[i].id);
-            break;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          const isOver20 = scrollY > 20;
+          if (isOver20 !== scrolledRef.current) {
+            scrolledRef.current = isOver20;
+            setScrolled(isOver20);
           }
-        }
+
+          const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+          const scrolledPercent = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
+          if (progressBarRef.current) {
+            progressBarRef.current.style.width = `${scrolledPercent}%`;
+          }
+
+          const scrollPosition = scrollY + 140;
+          for (let i = 0; i < navItems.length; i++) {
+            const section = document.getElementById(navItems[i].id);
+            if (section) {
+              const offsetTop = section.offsetTop;
+              const offsetHeight = section.offsetHeight;
+              if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+                if (navItems[i].id !== activeSectionRef.current) {
+                  activeSectionRef.current = navItems[i].id;
+                  setActiveSection(navItems[i].id);
+                }
+                break;
+              }
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -58,24 +72,9 @@ export default function Navbar() {
   const scrollTo = (id) => {
     setIsOpen(false);
 
-    // If target is "projects" and 3D HeroStage is active on desktop, scroll to ~0.62 progress
-    if (id === "projects") {
-      const homeEl = document.getElementById("home");
-      if (homeEl && homeEl.offsetHeight > window.innerHeight * 2) {
-        const stageTop = homeEl.getBoundingClientRect().top + window.scrollY;
-        const totalTrack = homeEl.offsetHeight - window.innerHeight;
-        const targetY = stageTop + 0.62 * totalTrack;
-        window.scrollTo({
-          top: targetY,
-          behavior: "smooth",
-        });
-        return;
-      }
-    }
-
     const element = document.getElementById(id);
     if (element) {
-      const offset = 80; // height of navbar
+      const offset = 80;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
 
       window.scrollTo({
@@ -88,48 +87,53 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        scrolled ? "glass-nav shadow-lg" : "bg-transparent border-b border-transparent"
+        scrolled
+          ? "bg-[#030508]/85 backdrop-blur-xl border-b border-white/[0.07] shadow-xl shadow-black/40"
+          : "bg-transparent border-b border-transparent"
       }`}
     >
-      {/* Scroll Progress Bar */}
+      {/* Precision Scroll Progress Indicator */}
       <div
-        className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-violet-600 via-cyan-500 to-emerald-400"
-        style={{ width: `${scrollProgress}%` }}
+        ref={progressBarRef}
+        className="absolute bottom-0 left-0 h-[1.5px] bg-[#c59b7b] transition-[width] duration-75"
+        style={{ width: "0%" }}
       />
 
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        {/* Logo */}
+        {/* Architectural Logo */}
         <button
           onClick={() => scrollTo("home")}
-          className="flex items-center gap-2 cursor-pointer font-display text-lg font-bold tracking-tight text-white focus:outline-none"
+          className="flex items-center gap-2.5 cursor-pointer font-display text-base font-semibold tracking-tight text-[#eaeef1] hover:text-white transition-colors focus:outline-none"
         >
-          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-violet-600 to-cyan-500 text-white shadow-md">
-            <Terminal className="w-5 h-5" />
+          <div className="p-1.5 rounded-lg bg-[#080d12] border border-white/10 text-[#eaeef1] shadow-sm">
+            <Terminal className="w-4 h-4 text-[#c59b7b]" />
           </div>
-          <span className="bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+          <span>
             {personalInfo.firstName}
-            <span className="text-violet-500 font-extrabold ml-1">.</span>
+            <span className="text-[#c59b7b] font-bold ml-1">.</span>
           </span>
         </button>
 
         {/* Desktop Nav Links */}
-        <nav className="hidden md:flex items-center gap-1.5">
+        <nav className="hidden md:flex items-center gap-1">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => scrollTo(item.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer select-none focus:outline-none relative ${
-                activeSection === item.id ? "text-violet-400 font-semibold" : "text-zinc-400 hover:text-zinc-200"
+              className={`px-3.5 py-1.5 rounded-lg text-xs uppercase tracking-wider font-medium transition-all duration-200 cursor-pointer select-none focus:outline-none relative ${
+                activeSection === item.id
+                  ? "text-[#eaeef1] font-semibold"
+                  : "text-[#94a3b8] hover:text-[#eaeef1]"
               }`}
             >
               {activeSection === item.id && (
                 <motion.span
                   layoutId="activeNavBackground"
-                  className="absolute inset-0 bg-white/5 rounded-lg border border-white/5"
+                  className="absolute inset-0 bg-white/[0.07] rounded-lg border border-white/[0.09]"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
-              {item.label}
+              <span className="relative z-10">{item.label}</span>
             </button>
           ))}
         </nav>
@@ -138,18 +142,19 @@ export default function Navbar() {
         <div className="hidden md:block">
           <button
             onClick={() => scrollTo("contact")}
-            className="px-5 py-2.5 rounded-xl bg-violet-600/10 hover:bg-violet-600 hover:text-white border border-violet-500/30 hover:border-violet-500 text-violet-400 text-sm font-medium transition-all duration-300 cursor-pointer focus:outline-none"
+            className="px-4 py-2 rounded-lg bg-[#121a22] hover:bg-[#1a2530] text-[#eaeef1] hover:text-white border border-white/10 hover:border-white/20 text-xs font-medium tracking-wide uppercase transition-all duration-200 cursor-pointer focus:outline-none"
           >
-            Hire Me
+            Get In Touch
           </button>
         </div>
 
         {/* Mobile Menu Toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="md:hidden p-2 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-white/5 focus:outline-none"
+          className="md:hidden p-2.5 rounded-xl text-[#94a3b8] hover:text-[#eaeef1] hover:bg-white/5 focus:outline-none min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+          aria-label="Toggle Navigation"
         >
-          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
@@ -160,28 +165,31 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden glass-nav border-t border-white/5 shadow-2xl overflow-hidden"
+            transition={{ duration: 0.25 }}
+            className="md:hidden bg-[#05080c]/98 backdrop-blur-2xl border-t border-white/[0.08] shadow-2xl overflow-y-auto max-h-[calc(100dvh-5rem)]"
           >
-            <div className="px-6 py-6 flex flex-col gap-3">
+            <div className="px-5 py-5 flex flex-col gap-1.5">
               {navItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => scrollTo(item.id)}
-                  className={`w-full py-3 px-4 rounded-xl text-left text-base font-medium transition-all duration-200 cursor-pointer ${
+                  className={`w-full py-3 px-4 rounded-xl text-left text-sm font-medium transition-all duration-150 cursor-pointer flex items-center justify-between min-h-[44px] ${
                     activeSection === item.id
-                      ? "bg-violet-600/10 border border-violet-500/20 text-violet-400"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5 border border-transparent"
+                      ? "bg-white/[0.08] border border-white/10 text-white font-semibold"
+                      : "text-[#94a3b8] hover:text-[#eaeef1] hover:bg-white/5 border border-transparent"
                   }`}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {activeSection === item.id && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#c59b7b]" />
+                  )}
                 </button>
               ))}
               <button
                 onClick={() => scrollTo("contact")}
-                className="w-full mt-2 py-3.5 px-4 rounded-xl bg-violet-600 text-white text-center font-semibold text-base shadow-lg cursor-pointer"
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-[#c59b7b] hover:bg-[#d6ad8d] text-[#030508] text-center font-bold text-xs tracking-wider uppercase shadow-md cursor-pointer transition-colors min-h-[44px]"
               >
-                Hire Me
+                Get In Touch
               </button>
             </div>
           </motion.div>
