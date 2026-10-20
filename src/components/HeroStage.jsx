@@ -46,6 +46,15 @@ const ORBIT_SLOTS = [
   { x: -420, y: 40, z: 30, scale: 0.80, opacity: 0.85, zIndex: 28, isFront: false },
 ];
 
+// Mobile 3D Elliptical Orbit slots (scaled for phone viewport width 360-430px)
+const MOBILE_ORBIT_SLOTS = [
+  { x: 0, y: 135, z: 60, scale: 1.0, opacity: 1.0, zIndex: 40, isFront: true },
+  { x: 120, y: -10, z: 20, scale: 0.62, opacity: 0.80, zIndex: 28, isFront: false },
+  { x: 78, y: -110, z: -50, scale: 0.48, opacity: 0.55, zIndex: 18, isFront: false },
+  { x: -78, y: -110, z: -50, scale: 0.48, opacity: 0.55, zIndex: 18, isFront: false },
+  { x: -120, y: -10, z: 20, scale: 0.62, opacity: 0.80, zIndex: 28, isFront: false },
+];
+
 /**
  * HeroStage
  * High-Performance 60 FPS Interactive Circular Orbit Project Showcase with Avatar Video Scrubbing.
@@ -65,6 +74,7 @@ export default function HeroStage({ onOpenResume }) {
   const containerRef = useRef(null);
   const stickyStageRef = useRef(null);
   const videoRef = useRef(null);
+  const videoWrapperRef = useRef(null);
   const heroOverlayRef = useRef(null);
   const cardsOverlayRef = useRef(null);
   const progressBarRef = useRef(null);
@@ -258,55 +268,101 @@ export default function HeroStage({ onOpenResume }) {
       // p in [0.28, 0.44]: Arms spread wide (video ~4.48s -> dur)
       // p in [0.44, 0.88]: Wide-arms presentation hold (video held at dur)
       // p in [0.88, 1.00]: Smooth dissolve to standard portfolio
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
       let videoT;
-      if (p <= 0.08) {
-        videoT = 0;
-      } else if (p >= 0.44) {
-        videoT = dur;
-      } else if (p <= 0.28) {
-        const fraction = (p - 0.08) / (0.28 - 0.08);
-        videoT = fraction * standT;
+
+      if (isMobile) {
+        // MOBILE TIMELINE:
+        // 1. p in [0.00, 0.12]: Hero copy at the top scrolls out, video below glides up to top
+        const enterFraction = Math.min(1, Math.max(0, p / 0.12));
+
+        if (heroOverlayRef.current) {
+          const heroAlpha = Math.max(0, 1 - enterFraction);
+          heroOverlayRef.current.style.opacity = heroAlpha.toFixed(3);
+          heroOverlayRef.current.style.transform = `translateY(${-enterFraction * 80}px)`;
+          heroOverlayRef.current.style.pointerEvents = heroAlpha > 0.1 ? "auto" : "none";
+          heroOverlayRef.current.style.visibility = heroAlpha > 0.01 ? "visible" : "hidden";
+        }
+
+        if (videoWrapperRef.current) {
+          // Slide up from +24vh to 0vh as enterFraction goes 0 -> 1
+          const slideOffsetVh = (1 - enterFraction) * 24;
+          videoWrapperRef.current.style.transform = `translateY(${slideOffsetVh.toFixed(2)}vh)`;
+        }
+
+        // 2. Video Scrubbing on Mobile:
+        // Avatar remains seated while sliding up (videoT = 0).
+        // Once video reaches top (p >= 0.12), the scroll animation happens:
+        // p in [0.12, 0.30]: Avatar stands up
+        // p in [0.30, 0.46]: Avatar spreads arms wide
+        // p in [0.46, 0.88]: Wide arms hold with 5-project circular orbit
+        if (p <= 0.12) {
+          videoT = 0;
+        } else if (p >= 0.46) {
+          videoT = dur;
+        } else if (p <= 0.30) {
+          const fraction = (p - 0.12) / (0.30 - 0.12);
+          videoT = fraction * standT;
+        } else {
+          const fraction = (p - 0.30) / (0.46 - 0.30);
+          videoT = standT + fraction * (dur - standT);
+        }
       } else {
-        const fraction = (p - 0.28) / (0.44 - 0.28);
-        videoT = standT + fraction * (dur - standT);
+        // DESKTOP TIMELINE: 100% UNTOUCHED ORIGINAL LOGIC
+        if (videoWrapperRef.current) {
+          videoWrapperRef.current.style.transform = "translateY(0px)";
+        }
+
+        if (p <= 0.08) {
+          videoT = 0;
+        } else if (p >= 0.44) {
+          videoT = dur;
+        } else if (p <= 0.28) {
+          const fraction = (p - 0.08) / (0.28 - 0.08);
+          videoT = fraction * standT;
+        } else {
+          const fraction = (p - 0.28) / (0.44 - 0.28);
+          videoT = standT + fraction * (dur - standT);
+        }
+
+        // A. Hero Copy Overlay on Desktop: Fades out and slides up (0.06 -> 0.20)
+        if (heroOverlayRef.current) {
+          if (p < 0.06) {
+            heroOverlayRef.current.style.opacity = "1";
+            heroOverlayRef.current.style.transform = "translateY(0px)";
+            heroOverlayRef.current.style.pointerEvents = "auto";
+            heroOverlayRef.current.style.visibility = "visible";
+          } else if (p > 0.20) {
+            heroOverlayRef.current.style.opacity = "0";
+            heroOverlayRef.current.style.transform = "translateY(-30px)";
+            heroOverlayRef.current.style.pointerEvents = "none";
+            heroOverlayRef.current.style.visibility = "hidden";
+          } else {
+            const fadeP = (p - 0.06) / (0.20 - 0.06);
+            const alpha = 1 - fadeP;
+            heroOverlayRef.current.style.opacity = alpha.toFixed(3);
+            heroOverlayRef.current.style.transform = `translateY(${-fadeP * 30}px)`;
+            heroOverlayRef.current.style.pointerEvents = alpha > 0.05 ? "auto" : "none";
+            heroOverlayRef.current.style.visibility = alpha > 0.01 ? "visible" : "hidden";
+          }
+        }
       }
+
       targetTimeRef.current = Math.min(Math.max(videoT, 0), dur);
 
       // Trigger coalesced seek
       scheduleSeek();
 
-      // A. Hero Copy Overlay: Fades out and slides up (0.06 -> 0.20)
-      if (heroOverlayRef.current) {
-        if (p < 0.06) {
-          heroOverlayRef.current.style.opacity = "1";
-          heroOverlayRef.current.style.transform = "translateY(0px)";
-          heroOverlayRef.current.style.pointerEvents = "auto";
-          heroOverlayRef.current.style.visibility = "visible";
-        } else if (p > 0.20) {
-          heroOverlayRef.current.style.opacity = "0";
-          heroOverlayRef.current.style.transform = "translateY(-30px)";
-          heroOverlayRef.current.style.pointerEvents = "none";
-          heroOverlayRef.current.style.visibility = "hidden";
-        } else {
-          const fadeP = (p - 0.06) / (0.20 - 0.06);
-          const alpha = 1 - fadeP;
-          heroOverlayRef.current.style.opacity = alpha.toFixed(3);
-          heroOverlayRef.current.style.transform = `translateY(${-fadeP * 30}px)`;
-          heroOverlayRef.current.style.pointerEvents = alpha > 0.05 ? "auto" : "none";
-          heroOverlayRef.current.style.visibility = alpha > 0.01 ? "visible" : "hidden";
-        }
-      }
-
-
       // C. Interactive Circular Showcase Overlay (0.40 to 0.88)
       if (cardsOverlayRef.current) {
-        if (p < 0.35) {
+        const revealStart = isMobile ? 0.40 : 0.35;
+        if (p < revealStart) {
           cardsOverlayRef.current.style.opacity = "0";
           cardsOverlayRef.current.style.pointerEvents = "none";
           cardsOverlayRef.current.style.visibility = "hidden";
-        } else if (p >= 0.35 && p <= 0.88) {
+        } else if (p >= revealStart && p <= 0.88) {
           cardsOverlayRef.current.style.visibility = "visible";
-          const revealP = Math.min(1, Math.max(0, (p - 0.35) / 0.08));
+          const revealP = Math.min(1, Math.max(0, (p - revealStart) / 0.08));
           cardsOverlayRef.current.style.opacity = revealP.toFixed(3);
           cardsOverlayRef.current.style.pointerEvents = revealP > 0.4 ? "auto" : "none";
 
@@ -535,7 +591,11 @@ export default function HeroStage({ onOpenResume }) {
         {/* ---------------------------------------------------------- */}
         {/* VIDEO LAYER: Integrated Seamlessly Into Background         */}
         {/* ---------------------------------------------------------- */}
-        <div className="absolute inset-x-0 top-14 sm:top-16 h-[44vh] sm:h-[48vh] lg:inset-0 lg:top-0 lg:h-full z-0 flex items-center justify-center overflow-hidden bg-[#030508] lg:pt-20 lg:pb-6">
+        <div
+          ref={videoWrapperRef}
+          className="absolute inset-x-0 h-screen lg:inset-0 z-0 flex items-center justify-center overflow-hidden bg-[#030508] lg:pt-20 lg:pb-6"
+          style={{ willChange: "transform" }}
+        >
           <video
             ref={videoRef}
             src={videoSrc}
@@ -595,11 +655,11 @@ export default function HeroStage({ onOpenResume }) {
         {/* ---------------------------------------------------------- */}
         <div
           ref={heroOverlayRef}
-          className="absolute inset-x-0 top-[45vh] sm:top-[48vh] bottom-0 lg:inset-0 lg:top-0 z-35 pointer-events-auto flex flex-col lg:flex-row items-center justify-center lg:justify-start transition-opacity duration-150 overflow-hidden"
+          className="absolute inset-x-0 top-16 sm:top-20 lg:inset-0 lg:top-0 z-35 pointer-events-auto flex flex-col lg:flex-row items-center justify-start lg:justify-start transition-opacity duration-150 overflow-hidden"
           style={{ willChange: "transform, opacity" }}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex items-center h-full">
-            <div className="w-full lg:max-w-[38vw] xl:max-w-[480px] flex flex-col justify-center text-center lg:text-left bg-zinc-950/40 lg:bg-transparent backdrop-blur-sm lg:backdrop-blur-none p-4 sm:p-6 lg:p-0 rounded-3xl border border-white/5 lg:border-none shadow-2xl lg:shadow-none">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full flex items-center h-auto lg:h-full">
+            <div className="w-full lg:max-w-[38vw] xl:max-w-[480px] flex flex-col justify-center text-center lg:text-left bg-zinc-950/60 lg:bg-transparent backdrop-blur-sm lg:backdrop-blur-none p-4 sm:p-6 lg:p-0 rounded-2xl sm:rounded-3xl border border-white/5 lg:border-none shadow-2xl lg:shadow-none">
               {/* Role Badge */}
               <div className="inline-flex items-center gap-1.5 sm:gap-2 self-center lg:self-start px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-white/[0.08] bg-[#080d12] text-[#c59b7b] text-[10px] sm:text-xs font-mono font-medium tracking-wider uppercase mb-2 sm:mb-4">
                 <BrainCircuit className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#c59b7b]" />
@@ -1010,162 +1070,277 @@ export default function HeroStage({ onOpenResume }) {
             </div>
           </div>
 
-          {/* TABLET & MOBILE CIRCULAR SHOWCASE (< 1024px) */}
+          {/* ---------------------------------------------------------- */}
+          {/* MOBILE 3D CIRCULAR ORBIT SHOWCASE (< 1024px)              */}
+          {/* Avatar in center, 5 project holograms orbiting in 3D       */}
+          {/* ---------------------------------------------------------- */}
           <div
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            className="lg:hidden absolute inset-x-0 top-[40vh] sm:top-[44vh] bottom-0 flex flex-col justify-between px-3.5 sm:px-6 pt-2 pb-16 pointer-events-none overflow-y-auto"
+            className="lg:hidden absolute inset-0 w-full h-full pointer-events-none select-none"
           >
-            {/* Mobile 5-Project Quick Switcher Tabs */}
-            <div className="flex items-center justify-between gap-1.5 overflow-x-auto no-scrollbar py-1 shrink-0 px-0.5">
+            {/* Mobile 3D Tilted Elliptical Orbit Track around Avatar's Waist */}
+            <div
+              className="absolute left-1/2 top-[44%] -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none z-10 w-[96vw] max-w-[390px] h-[220px]"
+              style={{ transform: "rotateX(64deg) rotateZ(-3deg)" }}
+            >
+              <svg className="w-full h-full" viewBox="0 0 400 220">
+                <defs>
+                  <linearGradient id="orbitMobileGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#00d2ff" stopOpacity="0.8" />
+                    <stop offset="25%" stopColor="#818cf8" stopOpacity="0.5" />
+                    <stop offset="50%" stopColor="#10b981" stopOpacity="0.7" />
+                    <stop offset="75%" stopColor="#f97316" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="#c084fc" stopOpacity="0.8" />
+                  </linearGradient>
+                </defs>
+                <ellipse
+                  cx="200"
+                  cy="110"
+                  rx="182"
+                  ry="92"
+                  fill="none"
+                  stroke="url(#orbitMobileGradient)"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 6"
+                  opacity="0.65"
+                />
+              </svg>
+            </div>
+
+            {/* Orbiting 3D Cards Container on Mobile */}
+            <div className="relative w-full h-full flex items-center justify-center">
               {projectsData.map((project, idx) => {
-                const isCurrent = idx === activeIndex;
+                const offset = (idx - activeIndex + projectsData.length) % projectsData.length;
+                const slot = MOBILE_ORBIT_SLOTS[offset] || MOBILE_ORBIT_SLOTS[0];
+                const isFront = slot.isFront;
+                const hasLiveUrl = Boolean(project.liveUrl);
+                const techList = project.technologies || project.tech || [];
+
+                if (isFront) {
+                  // ----------------------------------------------------
+                  // MOBILE FRONT ACTIVE PROJECT CONSOLE
+                  // ----------------------------------------------------
+                  return (
+                    <div
+                      key={`mob-front-${project.id}`}
+                      style={{
+                        position: "absolute",
+                        left: "50%",
+                        top: "46%",
+                        transform: `translate3d(calc(-50% + ${slot.x}px), calc(-50% + ${slot.y}px), ${slot.z}px) scale(${slot.scale})`,
+                        opacity: slot.opacity,
+                        zIndex: slot.zIndex,
+                        transition: "transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
+                        boxShadow: `0 0 25px -4px ${project.glowColor}, 0 20px 40px -10px rgba(0,0,0,0.92)`,
+                        borderColor: `${project.accentColor}90`,
+                      }}
+                      className="w-[92vw] max-w-[350px] arch-card rounded-2xl overflow-hidden border bg-[#080d12]/95 backdrop-blur-xl pointer-events-auto p-3.5 flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Header: Pulsing dot + Title + Category */}
+                        <div className="flex items-center justify-between gap-1.5 mb-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="w-2 h-2 rounded-full animate-pulse shrink-0"
+                              style={{ backgroundColor: project.accentColor }}
+                            />
+                            <h3 className="text-base font-bold text-white font-display truncate">
+                              {project.title}
+                            </h3>
+                          </div>
+                          <span
+                            className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border shrink-0"
+                            style={{
+                              borderColor: `${project.accentColor}50`,
+                              color: project.accentColor,
+                              backgroundColor: project.badgeColor,
+                            }}
+                          >
+                            0{project.heroOrder} // {project.category}
+                          </span>
+                        </div>
+
+                        {/* Tagline */}
+                        <p className="text-[11px] text-[#94a3b8] font-mono truncate">
+                          {project.tagline}
+                        </p>
+
+                        {/* Description */}
+                        <p className="text-[11px] text-[#cbd5e1] leading-relaxed line-clamp-2 mt-1.5 mb-2">
+                          {project.description}
+                        </p>
+
+                        {/* Tech tags */}
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {techList.slice(0, 3).map((tech, i) => (
+                            <span
+                              key={i}
+                              className="text-[9px] bg-[#121a22] border border-white/[0.08] text-[#94a3b8] px-2 py-0.5 rounded font-mono"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div
+                        className={`grid ${
+                          hasLiveUrl ? "grid-cols-3" : "grid-cols-2"
+                        } gap-1.5 pt-2 border-t border-white/[0.08]`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCaseProject(project)}
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-xl bg-[#eaeef1] hover:bg-white text-[#030508] text-xs font-bold transition-all cursor-pointer shadow-sm min-h-[38px]"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 text-[#c59b7b]" />
+                          <span>View</span>
+                        </button>
+
+                        <a
+                          href={project.githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1 py-1.5 rounded-xl bg-[#080d12] hover:bg-[#121a22] text-[#eaeef1] hover:text-white border border-white/10 text-xs font-semibold transition-all cursor-pointer shadow-sm min-h-[38px]"
+                        >
+                          <Github className="w-3.5 h-3.5" />
+                          <span>Code</span>
+                        </a>
+
+                        {hasLiveUrl && (
+                          <a
+                            href={project.liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1 py-1.5 rounded-xl bg-[#121a22] hover:bg-[#1a2530] text-[#eaeef1] hover:text-white border border-white/15 text-xs font-semibold transition-all cursor-pointer shadow-sm min-h-[38px]"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Live</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // --------------------------------------------------------
+                // INACTIVE SURROUNDING MOBILE ORBIT HOLOGRAMS
+                // --------------------------------------------------------
                 return (
-                  <button
-                    key={project.id}
-                    type="button"
+                  <div
+                    key={`mob-orbit-${project.id}`}
                     onClick={() => scrollToProject(idx)}
-                    className={`px-3 py-1.5 rounded-xl text-[11px] font-mono transition-all cursor-pointer whitespace-nowrap min-h-[38px] flex items-center gap-1.5 shrink-0 ${
-                      isCurrent
-                        ? "bg-[#eaeef1] text-[#030508] font-bold shadow-lg"
-                        : "bg-[#080d12]/95 text-[#94a3b8] border border-white/10 hover:text-white"
-                    }`}
+                    role="button"
+                    tabIndex={0}
+                    style={{
+                      position: "absolute",
+                      left: "50%",
+                      top: "46%",
+                      transform: `translate3d(calc(-50% + ${slot.x}px), calc(-50% + ${slot.y}px), ${slot.z}px) scale(${slot.scale})`,
+                      opacity: slot.opacity,
+                      zIndex: slot.zIndex,
+                      transition: "transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+                      boxShadow: `0 0 15px -3px ${project.glowColor}, 0 8px 18px -4px rgba(0,0,0,0.85)`,
+                      borderColor: "rgba(255, 255, 255, 0.15)",
+                    }}
+                    className="w-[125px] sm:w-[140px] h-[78px] sm:h-[84px] arch-card rounded-xl overflow-hidden border bg-[#080d12]/90 backdrop-blur-md pointer-events-auto cursor-pointer p-2 flex flex-col justify-between group active:scale-95 transition-all"
+                    title={`Select ${project.title}`}
                   >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: project.accentColor }}
-                    />
-                    <span>0{project.heroOrder} {project.title}</span>
-                  </button>
+                    {/* Background image preview with dark gradient */}
+                    <div className="absolute inset-0 z-0 overflow-hidden">
+                      <img
+                        src={project.image}
+                        alt={project.title}
+                        className="w-full h-full object-cover opacity-25"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#080d12] via-[#080d12]/60 to-transparent pointer-events-none" />
+                    </div>
+
+                    <div className="relative z-10 flex items-center justify-between">
+                      <span
+                        className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold border"
+                        style={{
+                          backgroundColor: "rgba(3, 5, 8, 0.9)",
+                          borderColor: `${project.accentColor}60`,
+                          color: project.accentColor,
+                        }}
+                      >
+                        0{project.heroOrder}
+                      </span>
+                      <span className="text-[9px] font-mono text-zinc-400 truncate max-w-[70px]">
+                        {project.category}
+                      </span>
+                    </div>
+
+                    <div className="relative z-10">
+                      <h4 className="text-xs font-bold text-white font-display truncate">
+                        {project.title}
+                      </h4>
+                      <div className="flex items-center justify-between text-[9px] font-mono text-[#c59b7b] mt-0.5">
+                        <span>Tap focus</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
 
-            {/* Selected Mobile Project Card */}
-            <div
-              className="arch-card rounded-2xl overflow-hidden border bg-[#080d12]/95 backdrop-blur-md shadow-2xl p-4 sm:p-5 max-w-md mx-auto w-full transition-all duration-300 my-auto"
-              style={{
-                borderColor: `${activeProject.accentColor}70`,
-                boxShadow: `0 0 25px -5px ${activeProject.glowColor}, 0 20px 40px -10px rgba(0,0,0,0.85)`,
-              }}
+            {/* Mobile Floating Left & Right Navigation Arrows */}
+            <button
+              type="button"
+              onClick={handlePrev}
+              aria-label="Previous Project"
+              className="absolute left-1.5 top-[54%] -translate-y-1/2 z-40 p-2 rounded-full border border-white/15 bg-[#080d12]/85 backdrop-blur-md text-[#eaeef1] active:scale-90 transition-all cursor-pointer shadow-xl min-w-[38px] min-h-[38px] flex items-center justify-center pointer-events-auto"
             >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-2 h-2 rounded-full animate-pulse"
-                      style={{ backgroundColor: activeProject.accentColor }}
-                    />
-                    <h3 className="text-base sm:text-lg font-bold text-white font-display">
-                      {activeProject.title}
-                    </h3>
-                    <span
-                      className="text-[10px] font-mono px-2 py-0.5 rounded border"
-                      style={{
-                        borderColor: `${activeProject.accentColor}40`,
-                        color: activeProject.accentColor,
-                        backgroundColor: activeProject.badgeColor,
-                      }}
-                    >
-                      0{activeProject.heroOrder}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#94a3b8] font-mono mt-0.5">
-                    {activeProject.tagline}
-                  </p>
-                </div>
-                {activeProject.role && activeProject.role.includes("Team") && (
-                  <span className="text-[10px] font-mono bg-[#c59b7b]/15 text-[#c59b7b] border border-[#c59b7b]/30 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                    <Users className="w-2.5 h-2.5" />
-                    Team of 4
-                  </span>
-                )}
-              </div>
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-              <p className="text-xs text-[#cbd5e1] leading-relaxed line-clamp-2 mb-3">
-                {activeProject.description}
-              </p>
+            <button
+              type="button"
+              onClick={handleNext}
+              aria-label="Next Project"
+              className="absolute right-1.5 top-[54%] -translate-y-1/2 z-40 p-2 rounded-full border border-white/15 bg-[#080d12]/85 backdrop-blur-md text-[#eaeef1] active:scale-90 transition-all cursor-pointer shadow-xl min-w-[38px] min-h-[38px] flex items-center justify-center pointer-events-auto"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
 
-              <div className="flex flex-wrap gap-1 mb-3.5">
-                {(activeProject.technologies || activeProject.tech || []).slice(0, 4).map((tech, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] bg-[#121a22] border border-white/[0.08] text-[#94a3b8] px-2 py-0.5 rounded font-mono"
+            {/* Mobile 5 Pagination Dots with Expanding Active Pill */}
+            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-[#080d12]/95 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 shadow-xl pointer-events-auto">
+              {projectsData.map((project, idx) => {
+                const isCurrent = idx === activeIndex;
+                return (
+                  <button
+                    key={`mob-dot-${project.id}`}
+                    type="button"
+                    onClick={() => scrollToProject(idx)}
+                    aria-label={`Select project ${project.title}`}
+                    className="transition-all duration-300 flex items-center gap-1 focus:outline-none cursor-pointer"
                   >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-
-              {/* Mobile Action Buttons (min 44px touch targets) */}
-              <div
-                className={`grid ${
-                  activeProject.liveUrl ? "grid-cols-3" : "grid-cols-2"
-                } gap-2 pt-2.5 border-t border-white/[0.08]`}
-              >
-                <button
-                  type="button"
-                  onClick={() => setSelectedCaseProject(activeProject)}
-                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#eaeef1] hover:bg-white text-[#030508] text-xs font-bold transition-all cursor-pointer shadow-md min-h-[44px]"
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-[#c59b7b]" />
-                  <span>Case Study</span>
-                </button>
-
-                <a
-                  href={activeProject.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#080d12] hover:bg-[#121a22] text-[#eaeef1] border border-white/10 text-xs font-semibold transition-all min-h-[44px]"
-                >
-                  <Github className="w-3.5 h-3.5" />
-                  <span>Code</span>
-                </a>
-
-                {activeProject.liveUrl && (
-                  <a
-                    href={activeProject.liveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-[#121a22] hover:bg-[#1a2530] text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm min-h-[44px]"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Live</span>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile Nav Arrows & Indicator Bar */}
-            <div className="flex items-center justify-between px-2 pt-2 shrink-0">
-              <button
-                type="button"
-                onClick={handlePrev}
-                aria-label="Previous project"
-                className="p-2.5 rounded-full border border-white/10 bg-[#080d12]/90 text-white min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div className="flex items-center gap-1.5">
-                {projectsData.map((p, idx) => (
-                  <span
-                    key={p.id}
-                    className={`h-2 rounded-full transition-all ${
-                      idx === activeIndex
-                        ? "w-6 bg-white"
-                        : "w-2 bg-white/20"
-                    }`}
-                  />
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={handleNext}
-                aria-label="Next project"
-                className="p-2.5 rounded-full border border-white/10 bg-[#080d12]/90 text-white min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+                    {isCurrent ? (
+                      <span
+                        className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border transition-all flex items-center gap-1 shadow-sm"
+                        style={{
+                          borderColor: project.accentColor,
+                          backgroundColor: project.badgeColor,
+                          color: "#eaeef1",
+                          boxShadow: `0 0 10px -2px ${project.glowColor}`,
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full animate-pulse"
+                          style={{ backgroundColor: project.accentColor }}
+                        />
+                        <span>0{project.heroOrder} {project.title}</span>
+                      </span>
+                    ) : (
+                      <span className="w-2 h-2 rounded-full bg-white/25 hover:bg-white/60 transition-colors" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
